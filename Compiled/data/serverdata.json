@@ -1,0 +1,49 @@
+{
+    "guilds": [
+        {
+            "id": "insertID",
+            "xp": 10,
+            "users": [
+                {
+                    "id": "userID",
+                    "xp": 0,
+                    "balance": {
+                        "bank": 0,
+                        "wallet": 0
+                    },
+                    "inventory": {
+                        "miners": [],
+                        "booster": []
+                    },
+                    "stats": {
+                        "gamesWon": 0,
+                        "messagesSent": 0
+                    }
+                }
+            ],
+            "settings": {
+                "mainChannel": "",
+                "qbChannel": "",
+                "loggingChannel": "",
+                "maniaChannel": "",
+                "maniaGames": ""
+            }
+        }
+    ],
+    "users": [
+        {
+            "id": "userID",
+            "xp": 0,
+            "gems": 0,
+            "inventory": {
+                "miners": [],
+                "booster": [],
+                "namecards": []
+            },
+            "stats": {
+                "gamesWon": 0,
+                "messagesSent": 0
+            }
+        }
+    ]
+}

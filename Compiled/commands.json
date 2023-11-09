@@ -1,0 +1,732 @@
+[
+    {
+        "name": "setup",
+        "description": "Setup a server's settings"
+    },
+    {
+        "name": "crash",
+        "description": "I seek death"
+    },
+    {
+        "name": "level",
+        "description": "See your current level in the server.",
+        "options": [
+            {
+                "type": 6,
+                "name": "user",
+                "description": "Specify which user"
+            }
+        ]
+    },
+    {
+        "name": "createpoll",
+        "description": "Create a new poll",
+        "options": [
+            {
+                "type": 7,
+                "name": "channel",
+                "description": "the poll channel",
+                "required": true
+            },
+            {
+                "type": 3,
+                "name": "time",
+                "description": "Ex- \"1d\" \"1s\" \"1m\"",
+                "required": true
+            },
+            {
+                "type": 3,
+                "name": "title",
+                "description": "poll title",
+                "required": true
+            },
+            {
+                "type": 3,
+                "name": "description",
+                "description": "options for the poll",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "create",
+        "description": "Create a new Uno Match (InDev)"
+    },
+    {
+        "name": "rank",
+        "description": "general rank manager",
+        "options": [
+            {
+                "type": 1,
+                "name": "add",
+                "description": "add a new rank",
+                "options": [
+                    {
+                        "type": 8,
+                        "name": "role",
+                        "description": "The role added to the ranks",
+                        "required": true
+                    },
+                    {
+                        "type": 10,
+                        "name": "level",
+                        "description": "the level requirement",
+                        "required": true
+                    },
+                    {
+                        "type": 5,
+                        "name": "persist",
+                        "description": "Whether or not the role remains when another rank is reached",
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "remove",
+                "description": "remove a existing rank",
+                "options": [
+                    {
+                        "type": 8,
+                        "name": "role",
+                        "description": "the role to remove",
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "list",
+                "description": "list the current ranks"
+            }
+        ]
+    },
+    {
+        "name": "roleselect",
+        "description": "Role select manager",
+        "options": [
+            {
+                "type": 1,
+                "name": "create",
+                "description": "Create a new role selector"
+            },
+            {
+                "type": 1,
+                "name": "edit",
+                "description": "Edit the roles for a role selector",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "messageid",
+                        "description": "Provide the message id for the role selector that needs changed",
+                        "required": true
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "addbounty",
+        "description": "Track a hypickle player and get pinged everytime they log on.",
+        "options": [
+            {
+                "type": 3,
+                "name": "username",
+                "description": "Provide their current username, use namemc to check for name changes",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "removebounty",
+        "description": "Untrack a hypickle player and don't get pinged everytime they log on.",
+        "options": [
+            {
+                "type": 3,
+                "name": "username",
+                "description": "Provide their current username, use namemc to check for name changes",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "cah",
+        "description": "Experimental Feature"
+    },
+    {
+        "name": "daily",
+        "description": "Receive your daily gems and xp."
+    },
+    {
+        "name": "leaderboard",
+        "description": "display the top 10 users"
+    },
+    {
+        "name": "publicshop",
+        "description": "ministry command"
+    },
+    {
+        "name": "cat",
+        "description": "Random cat images for the family"
+    },
+    {
+        "name": "dog",
+        "description": "Random dog images, why not?"
+    },
+    {
+        "name": "joke",
+        "description": "dad jokes for days."
+    },
+    {
+        "name": "game",
+        "description": "start a new game",
+        "options": [
+            {
+                "type": 3,
+                "name": "type",
+                "description": "what game is being started",
+                "choices": [
+                    {
+                        "name": "Unscramble",
+                        "value": "scramble"
+                    },
+                    {
+                        "name": "Math Problem",
+                        "value": "math"
+                    },
+                    {
+                        "name": "Trivia Problem",
+                        "value": "trivia"
+                    }
+                ],
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "flip",
+        "description": "flip a coin for a chance to double your bet.",
+        "options": [
+            {
+                "type": 4,
+                "name": "bet",
+                "description": "the amount of coins to bet",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "stats",
+        "description": "Request a users stats"
+    },
+    {
+        "name": "balance",
+        "description": "See your gem balance.",
+        "options": [
+            {
+                "type": 6,
+                "name": "user",
+                "description": "Who is being watched"
+            }
+        ]
+    },
+    {
+        "name": "items",
+        "description": "Show what items you own."
+    },
+    {
+        "name": "xp",
+        "description": "Manage the xp of a user",
+        "options": [
+            {
+                "type": 3,
+                "name": "type",
+                "description": "Give | Set | Remove",
+                "choices": [
+                    {
+                        "name": "give",
+                        "value": "give"
+                    },
+                    {
+                        "name": "set",
+                        "value": "set"
+                    },
+                    {
+                        "name": "remove",
+                        "value": "remove"
+                    }
+                ],
+                "required": true
+            },
+            {
+                "type": 6,
+                "name": "user",
+                "description": "User to be rewarded",
+                "required": true
+            },
+            {
+                "type": 4,
+                "name": "amount",
+                "description": "Amount of xp",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "gem",
+        "description": "Manage the gems of a user",
+        "options": [
+            {
+                "type": 3,
+                "name": "type",
+                "description": "Give | Set | Remove",
+                "choices": [
+                    {
+                        "name": "give",
+                        "value": "give"
+                    },
+                    {
+                        "name": "set",
+                        "value": "set"
+                    },
+                    {
+                        "name": "remove",
+                        "value": "remove"
+                    }
+                ],
+                "required": true
+            },
+            {
+                "type": 6,
+                "name": "user",
+                "description": "User to be rewarded",
+                "required": true
+            },
+            {
+                "type": 4,
+                "name": "amount",
+                "description": "Amount of gems",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "punishments",
+        "description": "View the punishments for a user.",
+        "options": [
+            {
+                "type": 6,
+                "name": "user",
+                "description": "Specify which user"
+            }
+        ]
+    },
+    {
+        "name": "punish",
+        "description": "Punish a user",
+        "options": [
+            {
+                "type": 1,
+                "name": "warn",
+                "description": "Warn a user",
+                "options": [
+                    {
+                        "type": 6,
+                        "name": "user",
+                        "description": "Thou shall be smitten",
+                        "required": true
+                    },
+                    {
+                        "type": 3,
+                        "name": "reason",
+                        "description": "The reason for the ban",
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "Nickname",
+                                "value": "No blank, inappropriate, or offensive nicknames are allowed"
+                            },
+                            {
+                                "name": "Pingable Names",
+                                "value": "All names must be pingable"
+                            },
+                            {
+                                "name": "Politcal / Contraversial",
+                                "value": "Political/Controversial conversations are strictly prohibited in our server"
+                            },
+                            {
+                                "name": "Professional / Courteous",
+                                "value": "Please try to act professional and courteous in our server"
+                            },
+                            {
+                                "name": "Role Begging",
+                                "value": "No Begging for roles"
+                            },
+                            {
+                                "name": "Ghost | Random | Spam pings",
+                                "value": "No ghost pings / Random Pings / Spam Pinging"
+                            },
+                            {
+                                "name": "Spamming",
+                                "value": "Spamming is not allowed"
+                            },
+                            {
+                                "name": "Ministry",
+                                "value": "No Insulting the Minsitry"
+                            },
+                            {
+                                "name": "Link Appropiate",
+                                "value": "Links are not allowed to lead to pages that include inappropriate content"
+                            },
+                            {
+                                "name": "Appropiate Media",
+                                "value": "All forms of media posted in our server must be appropriate"
+                            },
+                            {
+                                "name": "invite-links",
+                                "value": "Links can only include invites to Wolf-Co approved servers."
+                            },
+                            {
+                                "name": "anti-ministry",
+                                "value": "No Media is allowed to contain anti-Ministry content."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "ban",
+                "description": "Ban a user",
+                "options": [
+                    {
+                        "type": 6,
+                        "name": "user",
+                        "description": "Thou shall be smitten",
+                        "required": true
+                    },
+                    {
+                        "type": 4,
+                        "name": "messageremove",
+                        "description": "How many days of messages should be removed",
+                        "choices": [
+                            {
+                                "name": "1",
+                                "value": 1
+                            },
+                            {
+                                "name": "2",
+                                "value": 2
+                            },
+                            {
+                                "name": "3",
+                                "value": 3
+                            },
+                            {
+                                "name": "4",
+                                "value": 4
+                            },
+                            {
+                                "name": "5",
+                                "value": 5
+                            },
+                            {
+                                "name": "6",
+                                "value": 6
+                            },
+                            {
+                                "name": "7",
+                                "value": 7
+                            }
+                        ],
+                        "required": true
+                    },
+                    {
+                        "type": 3,
+                        "name": "reason",
+                        "description": "The reason for the ban",
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "Nickname",
+                                "value": "No blank, inappropriate, or offensive nicknames are allowed"
+                            },
+                            {
+                                "name": "Pingable Names",
+                                "value": "All names must be pingable"
+                            },
+                            {
+                                "name": "Politcal / Contraversial",
+                                "value": "Political/Controversial conversations are strictly prohibited in our server"
+                            },
+                            {
+                                "name": "Professional / Courteous",
+                                "value": "Please try to act professional and courteous in our server"
+                            },
+                            {
+                                "name": "Role Begging",
+                                "value": "No Begging for roles"
+                            },
+                            {
+                                "name": "Ghost | Random | Spam pings",
+                                "value": "No ghost pings / Random Pings / Spam Pinging"
+                            },
+                            {
+                                "name": "Spamming",
+                                "value": "Spamming is not allowed"
+                            },
+                            {
+                                "name": "Ministry",
+                                "value": "No Insulting the Minsitry"
+                            },
+                            {
+                                "name": "Link Appropiate",
+                                "value": "Links are not allowed to lead to pages that include inappropriate content"
+                            },
+                            {
+                                "name": "Appropiate Media",
+                                "value": "All forms of media posted in our server must be appropriate"
+                            },
+                            {
+                                "name": "invite-links",
+                                "value": "Links can only include invites to Wolf-Co approved servers."
+                            },
+                            {
+                                "name": "anti-ministry",
+                                "value": "No Media is allowed to contain anti-Ministry content."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "timeout",
+                "description": "Timeout a user",
+                "options": [
+                    {
+                        "type": 6,
+                        "name": "user",
+                        "description": "Thou shall be smitten",
+                        "required": true
+                    },
+                    {
+                        "type": 10,
+                        "name": "time",
+                        "description": "Time in minutes",
+                        "required": true
+                    },
+                    {
+                        "type": 3,
+                        "name": "reason",
+                        "description": "The reason for the ban",
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "Nickname",
+                                "value": "No blank, inappropriate, or offensive nicknames are allowed"
+                            },
+                            {
+                                "name": "Pingable Names",
+                                "value": "All names must be pingable"
+                            },
+                            {
+                                "name": "Politcal / Contraversial",
+                                "value": "Political/Controversial conversations are strictly prohibited in our server"
+                            },
+                            {
+                                "name": "Professional / Courteous",
+                                "value": "Please try to act professional and courteous in our server"
+                            },
+                            {
+                                "name": "Role Begging",
+                                "value": "No Begging for roles"
+                            },
+                            {
+                                "name": "Ghost | Random | Spam pings",
+                                "value": "No ghost pings / Random Pings / Spam Pinging"
+                            },
+                            {
+                                "name": "Spamming",
+                                "value": "Spamming is not allowed"
+                            },
+                            {
+                                "name": "Ministry",
+                                "value": "No Insulting the Minsitry"
+                            },
+                            {
+                                "name": "Link Appropiate",
+                                "value": "Links are not allowed to lead to pages that include inappropriate content"
+                            },
+                            {
+                                "name": "Appropiate Media",
+                                "value": "All forms of media posted in our server must be appropriate"
+                            },
+                            {
+                                "name": "invite-links",
+                                "value": "Links can only include invites to Wolf-Co approved servers."
+                            },
+                            {
+                                "name": "anti-ministry",
+                                "value": "No Media is allowed to contain anti-Ministry content."
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "kick",
+                "description": "Kick a user",
+                "options": [
+                    {
+                        "type": 6,
+                        "name": "user",
+                        "description": "Thou shall be smitten",
+                        "required": true
+                    },
+                    {
+                        "type": 3,
+                        "name": "reason",
+                        "description": "The reason for the ban",
+                        "required": true,
+                        "choices": [
+                            {
+                                "name": "Nickname",
+                                "value": "No blank, inappropriate, or offensive nicknames are allowed"
+                            },
+                            {
+                                "name": "Pingable Names",
+                                "value": "All names must be pingable"
+                            },
+                            {
+                                "name": "Politcal / Contraversial",
+                                "value": "Political/Controversial conversations are strictly prohibited in our server"
+                            },
+                            {
+                                "name": "Professional / Courteous",
+                                "value": "Please try to act professional and courteous in our server"
+                            },
+                            {
+                                "name": "Role Begging",
+                                "value": "No Begging for roles"
+                            },
+                            {
+                                "name": "Ghost | Random | Spam pings",
+                                "value": "No ghost pings / Random Pings / Spam Pinging"
+                            },
+                            {
+                                "name": "Spamming",
+                                "value": "Spamming is not allowed"
+                            },
+                            {
+                                "name": "Ministry",
+                                "value": "No Insulting the Minsitry"
+                            },
+                            {
+                                "name": "Link Appropiate",
+                                "value": "Links are not allowed to lead to pages that include inappropriate content"
+                            },
+                            {
+                                "name": "Appropiate Media",
+                                "value": "All forms of media posted in our server must be appropriate"
+                            },
+                            {
+                                "name": "invite-links",
+                                "value": "Links can only include invites to Wolf-Co approved servers."
+                            },
+                            {
+                                "name": "anti-ministry",
+                                "value": "No Media is allowed to contain anti-Ministry content."
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "rule",
+        "description": "Pull up a rule",
+        "options": [
+            {
+                "type": 1,
+                "name": "general-server",
+                "description": "rules partaining to chatting in general",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "rule",
+                        "description": "The rule to quote",
+                        "choices": [
+                            {
+                                "name": "Nickname",
+                                "value": "No blank, inappropriate, or offensive nicknames are allowed"
+                            },
+                            {
+                                "name": "Pingable Names",
+                                "value": "All names must be pingable"
+                            },
+                            {
+                                "name": "Politcal / Contraversial",
+                                "value": "Political/Controversial conversations are strictly prohibited in our server"
+                            },
+                            {
+                                "name": "Professional / Courteous",
+                                "value": "Please try to act professional and courteous in our server"
+                            },
+                            {
+                                "name": "Role Begging",
+                                "value": "No Begging for roles"
+                            },
+                            {
+                                "name": "Ghost | Random | Spam pings",
+                                "value": "No ghost pings / Random Pings / Spam Pinging"
+                            },
+                            {
+                                "name": "Spamming",
+                                "value": "Spamming is not allowed"
+                            },
+                            {
+                                "name": "Ministry",
+                                "value": "No Insulting the Minsitry"
+                            }
+                        ],
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "general-media",
+                "description": "rules partaining to media ( links | images | videos )",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "rule",
+                        "description": "The rule to quote",
+                        "choices": [
+                            {
+                                "name": "Link Appropiate",
+                                "value": "Links are not allowed to lead to pages that include inappropriate content"
+                            },
+                            {
+                                "name": "Appropiate Media",
+                                "value": "All forms of media posted in our server must be appropriate"
+                            },
+                            {
+                                "name": "invite-links",
+                                "value": "Links can only include invites to Wolf-Co approved servers."
+                            },
+                            {
+                                "name": "anti-ministry",
+                                "value": "No Media is allowed to contain anti-Ministry content."
+                            }
+                        ],
+                        "required": true
+                    }
+                ]
+            }
+        ]
+    }
+]
