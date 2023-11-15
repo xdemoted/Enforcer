@@ -1,12 +1,16 @@
 // Imports
-
-import { AttachmentBuilder, Client, ActionRowBuilder, CommandInteraction, Interaction, Message, Embed, TextChannel, SelectMenuInteraction, SelectMenuBuilder, EmbedField, SelectMenuOptionBuilder, User, GuildMemberRoleManager, ButtonBuilder, ButtonInteraction, Partials, GatewayIntentBits, AnyAPIActionRowComponent, AnyComponentBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, ButtonStyle, ComponentType, StringSelectMenuInteraction, StringSelectMenuBuilder, StageChannel, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelSelectMenuBuilder, NewsChannel, PublicThreadChannel, VoiceChannel, PrivateThreadChannel, PartialDMChannel, DMChannel, InteractionCollector, CacheType, GuildMember as DiscordGuildMember } from "discord.js";
+import { AttachmentBuilder, Client, ActionRowBuilder, CommandInteraction, Interaction, TextChannel, SelectMenuInteraction, EmbedField, User, ButtonBuilder, Partials, PermissionFlagsBits, ChannelType, EmbedBuilder, ButtonStyle, ComponentType, StringSelectMenuInteraction, StringSelectMenuBuilder, StageChannel, InteractionCollector, CacheType, GuildMember as DiscordGuildMember, SelectMenuComponentOptionData } from "discord.js";
+import data, { GuildMemberManager, UserManager, DataManager, GuildManager, BaseUser, GlobalUser } from './modules/data'
+import { RunTimeEvents } from "./modules/RunTimeEvents";
+import { dailyQB } from "./modules/games";
 import can from 'canvas';
 
+// Variables
 const client = new Client({ partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.GuildMember, Partials.User], intents: 131071 });
 let medals = ['🥇', '🥈', '🥉']
-let charMap = "`~1!2@3#4$5%6^7&8*9(0)-_=+qwertyuiop[{]};:'.>,<qwertyuiopasdfghjklzxcvbnm /?|" + '"'
-import data, { BaseUserManager, GuildMember, GuildMemberManager, UserManager, Guild, DataManager, GuildManager, BaseUser, GlobalUser } from './modules/datamanager'
+let runtimeEvents = new RunTimeEvents()
+let activeQB: dailyQB[] = []
+// Utility Functions
 function random(min: number, max: number) {
     return Math.round(Math.random() * (max - min)) + min
 }
@@ -36,6 +40,8 @@ function checkOwner(interaction: CommandInteraction, reply?: boolean) {
         }
     }
 }
+
+// Image Generation
 async function getWelcomeBanner(imagelink: string) {
     let canvas = can.createCanvas(1200, 300)
     let context = canvas.getContext('2d')
@@ -76,15 +82,107 @@ async function getImage(user: GuildMemberManager | UserManager, dUser: User) {
     context.fillText(userLevel.toString(), 1043, 75)
     return canvas.toBuffer('image/png')
 }
-client.on('ready', () => {
+
+// Client Events
+client.on('ready', async () => {
     client.guilds.fetch()
     client.application?.commands.set([])
     client.guilds.cache.forEach(guild => {
         guild.commands.set(require('./commands.json'))
     })
+    runtimeEvents.on('hour', async hour => {
+        if (hour == 13) {
+            let newList: dailyQB[] = []
+            client.guilds.cache.forEach(async guild => {
+                let guildData = data.getGuild(guild.id)
+                let channel = guild.channels.cache.get(guildData.settings.qbChannel.toString())
+                let qb = activeQB.find(qb => qb.channel == guildData.settings.qbChannel.toString())
+                if (channel instanceof TextChannel) {
+                    let quizbowl = await dailyQB.init(channel.id)
+                    let embed = new EmbedBuilder()
+                        .setTitle('Daily Quiz Bowl')
+                        .setDescription(quizbowl.prompt[0] + '.')
+                        .setFooter({ text: 'Hints every 2 hours, new prompt at 7 AM CST, use the /answer command to answer.' })
+                    if (qb) {
+                        let message = channel.messages.cache.get(qb.message)
+                        if (message) {
+                            message.edit({ embeds: [embed] })
+                            quizbowl.message = message?.id
+                        }
+                        newList.push(quizbowl)
+                    } else {
+                        newList.push(quizbowl)
+                        let message = await channel.send({ embeds: [embed] })
+                        quizbowl.message = message?.id
+                    }
+                }
+            })
+            activeQB = newList
+        } else if (Math.floor((hour - 13) / 2) == (hour - 13) / 2) {
+            activeQB.forEach(async qb => {
+                let prompt = qb.prompt[Math.floor((hour - 13) / 2)]
+                let channel = client.channels.cache.get(qb.channel)
+                if (prompt && channel instanceof TextChannel) {
+                    let message = channel.messages.cache.get(qb.message)
+                    console.log(message)
+                    if (message) {
+                        let embed = message.embeds[0]
+                        let newEmbed = new EmbedBuilder()
+                            .setTitle('Daily Quiz Bowl')
+                            .setDescription(embed.description + prompt + '.')
+                            .setFields(embed.fields)
+                            .setFooter(embed.footer)
+                        message.edit({ embeds: [newEmbed] })
+                    }
+                }
+            })
+        }
+        console.log(hour)
+    })
+    runtimeEvents.on('5minute', () => {
+        data.write()
+    })
+})
+client.on('messageDelete', async message => {
+    if (message.author?.bot) return;
+    let channelID = data.getGuild(message.guild?.id as string).settings.loggingChannel
+    let channel = message.guild?.channels.cache.get(channelID.toString())
+    if (channel instanceof TextChannel) {
+        if (message.content == undefined || message.content.length < 256) {
+            let embed = new EmbedBuilder()
+                .setColor('Red')
+                .setTitle('Message Deleted')
+                .setDescription(`Message sent by <@${message.author?.id}> deleted in <#${message.channel.id}>`)
+                .addFields([{ name: 'Content', value: (message.content) ? message.content : 'No Message Content', inline: false }])
+                .setTimestamp(message.createdAt)
+            channel.send({ embeds: [embed], files: Array.from(message.attachments.values()) })
+        } else if (message.content) {
+            let embed = new EmbedBuilder()
+                .setColor('Red')
+                .setTitle('Message Deleted')
+                .setDescription(`Message sent by <@${message.author?.id}> deleted in <#${message.channel.id}>`)
+                .addFields([{ name: 'Content', value: 'Posted Above', inline: false }])
+                .setTimestamp(message.createdAt)
+            channel.send({ embeds: [embed], files: Array.from(message.attachments.values()), content: message.content })
+        }
+    }
 })
 client.on('messageCreate', message => {
     // Add xp on message and game responses
+    if (message.content.length > 5) {
+        if (message.guild) {
+            let serverManager = data.getGuildManager(message.guild.id)
+            let user = serverManager.getMember(message.author.id)
+            let userManager = new GuildMemberManager(user)
+            if (userManager.getTimer('message') + 60000 < Date.now()) {
+                userManager.addXP(random(10, 25))
+                userManager.addWallet(random(1, 5))
+                let guser = new UserManager(userManager.getGlobalUser())
+                guser.addXP(random(1, 5))
+                userManager.setTimer('message', Date.now())
+            }
+        }
+    }
 })
 client.on('interactionCreate', async (interaction: Interaction) => {
     if (interaction.guildId) {
@@ -98,6 +196,14 @@ client.on('interactionCreate', async (interaction: Interaction) => {
             if (typeof interaction.guildId !== "string") return;
             switch (interaction.commandName) {
                 //Xp Commands
+                case 'blackjack': {
+                    //mainChannel: 'string',
+                    //qbChannel: 'string',
+                    //loggingChannel: 'string',
+                    //maniaChannel: 'thread',
+                    //maniaGames: 'string',
+                    //gameThread: 'thread'
+                } break;
                 case 'leaderboard': {
                     let list: BaseUser[] = serverManager.members.sort((a, b) => b.xp - a.xp)
                     let users: EmbedField[] = []
@@ -195,6 +301,47 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                     })
                 }
                     break;
+                case 'answer': {
+                    let answer = interaction.options.getString('answer')
+                    let qb = activeQB.find(qb => qb.channel == interaction.channelId)
+                    if (answer && qb) {
+                        let response = await qb?.checkanswer(answer)
+                        let user = new GuildMemberManager(serverManager.getMember(interaction.user.id))
+                        console.log(user.getTimer('qb'))
+                        if (user.getTimer('qb') < qb.startTime) {
+                            if (response == 'accept') {
+                                if (qb.open) {
+                                    interaction.reply({ content: 'Correct Answer! 1000 xp and 50 coins has been awarded for being first.', ephemeral: true })
+                                    user.addXP(1000)
+                                    user.addWallet(50)
+                                    let message = interaction.channel?.messages.cache.get(qb.message)
+                                    if (message) {
+                                        let embed = message.embeds[0]
+                                        let newEmbed = new EmbedBuilder()
+                                            .setTitle('Daily Quiz Bowl')
+                                            .setDescription(embed.description)
+                                            .setFields(embed.fields)
+                                            .addFields([{name: 'First Answerer', value: `${interaction.user.displayName}`, inline: false }])
+                                            .setFooter(embed.footer)
+                                        message.edit({embeds:[newEmbed]})
+                                    }
+                                } else {
+                                    interaction.reply({ content: 'Correct Answer! 250 xp and 10 coins has been awarded for answering.', ephemeral: true })
+                                    user.addXP(250)
+                                    user.addWallet(10)
+                                }
+                                user.setTimer('qb', Date.now())
+                            } else {
+                                interaction.reply({ content: response, ephemeral: true })
+                            }
+                        } else {
+                            interaction.reply({ content: 'Come back tomorrow for a new prompt.', ephemeral: true })
+                        }
+                    } else {
+                        interaction.reply({ ephemeral: true, content: 'No Active Quiz Bowl' })
+                    }
+                }
+                    break;
                 case 'level': { // Untested 
                     let auser = interaction.options.get("user")?.user
                     if (auser) {
@@ -251,7 +398,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                         interaction.reply({ embeds: [embed] })
                         userManager.addXP(1000)
                     } else {
-                        interaction.reply(`You can recieve more rewards at <t:${Math.round((userManager.getTimer('daily')+ 64800000) / 1000)}:t>`)
+                        interaction.reply(`You can recieve more rewards at <t:${Math.round((userManager.getTimer('daily') + 64800000) / 1000)}:t>`)
                     }
                 }
                     break
@@ -283,135 +430,237 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                 }
                 case 'setup': {
                     if (checkOwner(interaction, true) && !(interaction.channel instanceof StageChannel)) {
+                        function convertToCompliant(string: string) {
+                            const regex = /[^a-z0-9_-]/g;
+                            return string.replace(regex, '');
+                        }
+                        await interaction.guild?.channels.fetch()
+                        let backOption = { label: 'Back', value: 'back' }
+                        let channels = interaction.guild?.channels.cache.filter(c => c.type == ChannelType.GuildText)
+                        let channelOptions: SelectMenuComponentOptionData[] = []
+                        channels?.forEach(c => {
+                            channelOptions.push({ label: convertToCompliant(c.name), value: c.id })
+                        })
+                        let threadChannels = interaction.guild?.channels.cache.filter(c => c.type == ChannelType.GuildForum)
+                        let threadChannelOptions: SelectMenuComponentOptionData[] = []
+                        threadChannels?.forEach(c => {
+                            threadChannelOptions.push({ label: convertToCompliant(c.name), value: c.id })
+                        })
+                        threadChannelOptions.push(backOption)
+                        channelOptions.push(backOption)
+                        let guild = data.getGuild(interaction.guildId as string)
                         let embed = new EmbedBuilder()
                             .setTitle('Server Setup Menu')
                             .setDescription('Use the selection menu below to modify different parts of the server.')
+                            .addFields([
+                                { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                            ])
                         let row = new ActionRowBuilder<StringSelectMenuBuilder>()
                             .addComponents(new StringSelectMenuBuilder()
                                 .addOptions([
                                     {
-                                        label: 'Games Channel',
-                                        value: 'gchan'
+                                        label: 'Timed Games Channel',
+                                        value: 'tgchan'
                                     },
                                     {
-                                        label: 'Games (Enabled/Disabled)',
-                                        value: 'gbool'
+                                        label: 'Daily Quiz Bowl Channel',
+                                        value: 'dqbchan'
                                     },
                                     {
-                                        label: 'Games Delay',
-                                        value: 'gdelay'
+                                        label: 'Logging Channel',
+                                        value: 'logchan'
+                                    },
+                                    {
+                                        label: 'Mania Channel',
+                                        value: 'manchan'
+                                    },
+                                    {
+                                        label: 'Mania Games',
+                                        value: 'mgchan'
+                                    },
+                                    {
+                                        label: 'Game Thread Channel',
+                                        value: 'gtchan'
                                     }
                                 ])
                                 .setCustomId('setup')
                             )
-                        interaction.reply({ embeds: [embed], components: [row] })
-                        let collect = interaction.channel?.createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' })
+                        let response = await interaction.reply({ embeds: [embed], components: [row] })
+                        const message = await interaction.fetchReply()
+                        let collect = interaction.channel?.createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => (c.user.id == interaction.user.id && c.customId == 'setup' && c.message.id == message.id) })
                         function collector(collect: InteractionCollector<SelectMenuInteraction<CacheType>>) {
                             collect?.on('collect', async int => {
                                 collect.stop()
                                 switch (int.values[0]) {
-                                    case 'gdelay': {
-                                        let emb = new EmbedBuilder()
-                                            .setTitle('Set Game Delay')
-                                            .setDescription('Select a number below in hours.')
+                                    case 'tgchan': {
+                                        let embed2 = new EmbedBuilder()
+                                            .setTitle('Timed Games Channel Setup')
+                                            .setDescription('Select the channel you would like to set as the timed games channel. Select back to go back.')
                                         let row2 = new ActionRowBuilder<StringSelectMenuBuilder>()
                                             .addComponents(new StringSelectMenuBuilder()
-                                                .addOptions([
-                                                    {
-                                                        label: '1',
-                                                        value: '1'
-                                                    },
-                                                    {
-                                                        label: '2',
-                                                        value: '2'
-                                                    },
-                                                    {
-                                                        label: '3',
-                                                        value: '3'
-                                                    },
-                                                    {
-                                                        label: '4',
-                                                        value: '4',
-                                                    },
-                                                    {
-                                                        label: '5',
-                                                        value: '5',
-                                                    }, {
-                                                        label: '6',
-                                                        value: '6',
-                                                    }
-                                                ])
-                                                .setCustomId('delay')
-                                            );
-
-                                        await int.update({ embeds: [emb], components: [row2] });
-                                        let collect = (interaction.channel as DMChannel | PartialDMChannel | NewsChannel | TextChannel | PrivateThreadChannel | PublicThreadChannel<boolean> | VoiceChannel | null)?.createMessageComponentCollector({ filter: t => t.customId == 'delay' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
-                                        collect?.on('collect', async int => {
-                                            let guild = data.getGuild(interaction.guildId as string)
-                                            guild.settings.gameDelay = Number(int.values[0]) * 3600000
-                                            let collect = (interaction.channel as TextChannel).createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
-                                            if (collect) {
-                                                await int.update({ embeds: [embed], components: [row] });
-                                                collector(collect as InteractionCollector<SelectMenuInteraction<CacheType>>)
-                                            }
-                                        })
-                                    }
-                                        break;
-                                    case 'gchan': {
-                                        let emb = new EmbedBuilder()
-                                            .setTitle('Set Game Channel')
-                                            .setDescription('Select a channel below.')
-                                        let row2 = new ActionRowBuilder<ChannelSelectMenuBuilder>()
-                                            .addComponents(new ChannelSelectMenuBuilder()
+                                                .addOptions(channelOptions)
                                                 .setCustomId('channel')
-                                                .setChannelTypes([ChannelType.GuildText])
-                                            );
-                                        await int.update({ embeds: [emb], components: [row2] });
-                                        let collect = (interaction.channel as DMChannel | PartialDMChannel | NewsChannel | TextChannel | PrivateThreadChannel | PublicThreadChannel<boolean> | VoiceChannel | null)?.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: ComponentType.ChannelSelect, idle: 120000, max: 1 })
+                                            )
+                                        await int.update({ embeds: [embed2], components: [row2] })
+                                        let collect = interaction.channel?.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
                                         collect?.on('collect', async channel => {
-                                            let guild = data.getGuild(interaction.guildId as string)
-                                            guild.settings.mainChannel = channel.values[0]
+                                            if (channel.values[0] !== 'back') {
+                                                let guild = data.getGuild(interaction.guildId as string)
+                                                guild.settings.mainChannel = channel.values[0]
+                                            }
                                             let collect = (interaction.channel as TextChannel).createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
                                             if (collect) {
+                                                let embed = new EmbedBuilder()
+                                                    .setTitle('Server Setup Menu')
+                                                    .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                    .addFields([
+                                                        { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                        { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                        { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                        { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                        { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                    ])
                                                 await channel.update({ embeds: [embed], components: [row] });
-                                                collector(collect as InteractionCollector<SelectMenuInteraction<CacheType>>)
+                                                collector(collect as InteractionCollector<StringSelectMenuInteraction<CacheType>>)
                                             }
                                         })
-                                    }
-                                        break;
-                                    case 'gbool':
-                                        let emb = new EmbedBuilder()
-                                            .setTitle('Set if games are enabled.')
-                                            .setDescription('Select Enabled or Disabled')
+                                    } break;
+                                    case 'dqbchan': {
+                                        let embed2 = new EmbedBuilder()
+                                            .setTitle('Quiz Bowl Setup')
+                                            .setDescription('Select the channel you would like to set as the quiz bowl channel. Select back to go back.')
                                         let row2 = new ActionRowBuilder<StringSelectMenuBuilder>()
                                             .addComponents(new StringSelectMenuBuilder()
-                                                .addOptions([
-                                                    {
-                                                        label: 'Enabled',
-                                                        value: 'true'
-                                                    },
-                                                    {
-                                                        label: 'Disabled',
-                                                        value: 'false'
-                                                    }
-                                                ])
-                                                .setCustomId('bool')
-                                            );
-
-                                        await int.update({ embeds: [emb], components: [row2] });
-                                        let collect = (interaction.channel as DMChannel | PartialDMChannel | NewsChannel | TextChannel | PrivateThreadChannel | PublicThreadChannel<boolean> | VoiceChannel | null)?.createMessageComponentCollector({ filter: t => t.customId == 'bool' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
-                                        collect?.on('collect', async int => {
-                                            let guild = data.getGuild(interaction.guildId as string)
-                                            guild.settings.gameToggle = eval(int.values[0])
+                                                .addOptions(channelOptions)
+                                                .setCustomId('channel')
+                                            )
+                                        await int.update({ embeds: [embed2], components: [row2] })
+                                        let collect = interaction.channel?.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
+                                        collect?.on('collect', async channel => {
+                                            if (channel.values[0] !== 'back') {
+                                                let guild = data.getGuild(interaction.guildId as string)
+                                                guild.settings.qbChannel = channel.values[0]
+                                            }
                                             let collect = (interaction.channel as TextChannel).createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
                                             if (collect) {
-                                                await int.update({ embeds: [embed], components: [row] });
-                                                collector(collect as InteractionCollector<SelectMenuInteraction<CacheType>>)
+                                                let embed = new EmbedBuilder()
+                                                    .setTitle('Server Setup Menu')
+                                                    .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                    .addFields([
+                                                        { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                        { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                        { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                        { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                        { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                    ])
+                                                await channel.update({ embeds: [embed], components: [row] });
+                                                collector(collect as InteractionCollector<StringSelectMenuInteraction<CacheType>>)
                                             }
                                         })
-                                        break;
-                                    default:
-                                        break;
+                                    } break;
+                                    case 'logchan': {
+                                        let embed2 = new EmbedBuilder()
+                                            .setTitle('Log Channel Setup')
+                                            .setDescription('Select the channel you would like to set as the logging channel. Select back to go back.')
+                                        let row2 = new ActionRowBuilder<StringSelectMenuBuilder>()
+                                            .addComponents(new StringSelectMenuBuilder()
+                                                .addOptions(channelOptions)
+                                                .setCustomId('channel')
+                                            )
+                                        await int.update({ embeds: [embed2], components: [row2] })
+                                        let collect = interaction.channel?.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
+                                        collect?.on('collect', async channel => {
+                                            if (channel.values[0] !== 'back') {
+                                                let guild = data.getGuild(interaction.guildId as string)
+                                                guild.settings.loggingChannel = channel.values[0]
+                                            }
+                                            let collect = (interaction.channel as TextChannel).createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                            if (collect) {
+                                                let embed = new EmbedBuilder()
+                                                    .setTitle('Server Setup Menu')
+                                                    .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                    .addFields([
+                                                        { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                        { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                        { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                        { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                        { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                    ])
+                                                await channel.update({ embeds: [embed], components: [row] });
+                                                collector(collect as InteractionCollector<StringSelectMenuInteraction<CacheType>>)
+                                            }
+                                        })
+                                    } break;
+                                    case 'manchan': {
+                                        let embed2 = new EmbedBuilder()
+                                            .setTitle('Mania Setup')
+                                            .setDescription('Select the channel you would like to set as the mania channel. Select back to go back.')
+                                        let row2 = new ActionRowBuilder<StringSelectMenuBuilder>()
+                                            .addComponents(new StringSelectMenuBuilder()
+                                                .addOptions(channelOptions)
+                                                .setCustomId('channel')
+                                            )
+                                        await int.update({ embeds: [embed2], components: [row2] })
+                                        let collect = interaction.channel?.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
+                                        collect?.on('collect', async channel => {
+                                            if (channel.values[0] !== 'back') {
+                                                let guild = data.getGuild(interaction.guildId as string)
+                                                guild.settings.maniaChannel = channel.values[0]
+                                            }
+                                            let collect = (interaction.channel as TextChannel).createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                            if (collect) {
+                                                let embed = new EmbedBuilder()
+                                                    .setTitle('Server Setup Menu')
+                                                    .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                    .addFields([
+                                                        { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                        { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                        { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                        { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                        { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                    ])
+                                                await channel.update({ embeds: [embed], components: [row] });
+                                                collector(collect as InteractionCollector<StringSelectMenuInteraction<CacheType>>)
+                                            }
+                                        })
+                                    } break;
+                                    case 'gtchan': {
+                                        let embed2 = new EmbedBuilder()
+                                            .setTitle('Game Thread Setup')
+                                            .setDescription('Select the threads channel you would like to set as the main channel. Select back to go back.')
+                                        let row2 = new ActionRowBuilder<StringSelectMenuBuilder>()
+                                            .addComponents(new StringSelectMenuBuilder()
+                                                .addOptions(threadChannelOptions)
+                                                .setCustomId('channel')
+                                            )
+                                        await int.update({ embeds: [embed2], components: [row2] })
+                                        let collect = interaction.channel?.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: ComponentType.StringSelect, idle: 120000, max: 1 })
+                                        collect?.on('collect', async channel => {
+                                            if (channel.values[0] !== 'back') {
+                                                let guild = data.getGuild(interaction.guildId as string)
+                                                guild.settings.gameThread = channel.values[0]
+                                            }
+                                            let collect = (interaction.channel as TextChannel).createMessageComponentCollector({ componentType: ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                            if (collect) {
+                                                let embed = new EmbedBuilder()
+                                                    .setTitle('Server Setup Menu')
+                                                    .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                    .addFields([
+                                                        { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                        { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                        { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                        { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                        { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                    ])
+                                                await channel.update({ embeds: [embed], components: [row] });
+                                                collector(collect as InteractionCollector<StringSelectMenuInteraction<CacheType>>)
+                                            }
+                                        })
+                                    } break;
                                 }
                             })
                         }

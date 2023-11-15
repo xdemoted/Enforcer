@@ -1,5 +1,4 @@
 "use strict";
-// Imports
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -36,12 +35,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// Imports
 const discord_js_1 = require("discord.js");
+const data_1 = __importStar(require("./modules/data"));
+const RunTimeEvents_1 = require("./modules/RunTimeEvents");
+const games_1 = require("./modules/games");
 const canvas_1 = __importDefault(require("canvas"));
+// Variables
 const client = new discord_js_1.Client({ partials: [discord_js_1.Partials.Message, discord_js_1.Partials.Channel, discord_js_1.Partials.Reaction, discord_js_1.Partials.GuildMember, discord_js_1.Partials.User], intents: 131071 });
 let medals = ['🥇', '🥈', '🥉'];
-let charMap = "`~1!2@3#4$5%6^7&8*9(0)-_=+qwertyuiop[{]};:'.>,<qwertyuiopasdfghjklzxcvbnm /?|" + '"';
-const datamanager_1 = __importStar(require("./modules/datamanager"));
+let runtimeEvents = new RunTimeEvents_1.RunTimeEvents();
+let activeQB = [];
+// Utility Functions
 function random(min, max) {
     return Math.round(Math.random() * (max - min)) + min;
 }
@@ -75,6 +80,7 @@ function checkOwner(interaction, reply) {
         }
     }
 }
+// Image Generation
 function getWelcomeBanner(imagelink) {
     return __awaiter(this, void 0, void 0, function* () {
         let canvas = canvas_1.default.createCanvas(1200, 300);
@@ -87,9 +93,9 @@ function getWelcomeBanner(imagelink) {
 function getImage(user, dUser) {
     return __awaiter(this, void 0, void 0, function* () {
         let userLevel = user.getLevel();
-        const lastRequirement = (userLevel > 1) ? datamanager_1.DataManager.getLevelRequirement(userLevel - 1) : 0;
+        const lastRequirement = (userLevel > 1) ? data_1.DataManager.getLevelRequirement(userLevel - 1) : 0;
         const avatarURL = dUser.avatarURL({ extension: 'png' });
-        const requirement = datamanager_1.DataManager.getLevelRequirement(userLevel);
+        const requirement = data_1.DataManager.getLevelRequirement(userLevel);
         let canvas = canvas_1.default.createCanvas(1200, 300);
         let context = canvas.getContext('2d');
         context.fillStyle = '#171717';
@@ -110,7 +116,7 @@ function getImage(user, dUser) {
         // Requirements + Discriminator
         context.font = '30px Arial';
         context.fillText(dUser.discriminator, 335 + wid, 192);
-        context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, 1125 - context.measureText(`${user.user.xp - datamanager_1.DataManager.getLevelRequirement(userLevel - 1)} / ${datamanager_1.DataManager.getLevelRequirement(user.getLevel()) - datamanager_1.DataManager.getLevelRequirement(userLevel)} XP`).width, 192);
+        context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, 1125 - context.measureText(`${user.user.xp - data_1.DataManager.getLevelRequirement(userLevel - 1)} / ${data_1.DataManager.getLevelRequirement(user.getLevel()) - data_1.DataManager.getLevelRequirement(userLevel)} XP`).width, 192);
         context.fillStyle = '#00EDFF';
         // Top Right Level
         context.fillText("Level", 960, 75);
@@ -119,31 +125,137 @@ function getImage(user, dUser) {
         return canvas.toBuffer('image/png');
     });
 }
-client.on('ready', () => {
+// Client Events
+client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     client.guilds.fetch();
     (_a = client.application) === null || _a === void 0 ? void 0 : _a.commands.set([]);
     client.guilds.cache.forEach(guild => {
         guild.commands.set(require('./commands.json'));
     });
-});
+    runtimeEvents.on('hour', (hour) => __awaiter(void 0, void 0, void 0, function* () {
+        if (hour == 13) {
+            let newList = [];
+            client.guilds.cache.forEach((guild) => __awaiter(void 0, void 0, void 0, function* () {
+                let guildData = data_1.default.getGuild(guild.id);
+                let channel = guild.channels.cache.get(guildData.settings.qbChannel.toString());
+                let qb = activeQB.find(qb => qb.channel == guildData.settings.qbChannel.toString());
+                if (channel instanceof discord_js_1.TextChannel) {
+                    let quizbowl = yield games_1.dailyQB.init(channel.id);
+                    let embed = new discord_js_1.EmbedBuilder()
+                        .setTitle('Daily Quiz Bowl')
+                        .setDescription(quizbowl.prompt[0] + '.')
+                        .setFooter({ text: 'Hints every 2 hours, new prompt at 7 AM CST, use the /answer command to answer.' });
+                    if (qb) {
+                        let message = channel.messages.cache.get(qb.message);
+                        if (message) {
+                            message.edit({ embeds: [embed] });
+                            quizbowl.message = message === null || message === void 0 ? void 0 : message.id;
+                        }
+                        newList.push(quizbowl);
+                    }
+                    else {
+                        newList.push(quizbowl);
+                        let message = yield channel.send({ embeds: [embed] });
+                        quizbowl.message = message === null || message === void 0 ? void 0 : message.id;
+                    }
+                }
+            }));
+            activeQB = newList;
+        }
+        else if (Math.floor((hour - 13) / 2) == (hour - 13) / 2) {
+            activeQB.forEach((qb) => __awaiter(void 0, void 0, void 0, function* () {
+                let prompt = qb.prompt[Math.floor((hour - 13) / 2)];
+                let channel = client.channels.cache.get(qb.channel);
+                if (prompt && channel instanceof discord_js_1.TextChannel) {
+                    let message = channel.messages.cache.get(qb.message);
+                    console.log(message);
+                    if (message) {
+                        let embed = message.embeds[0];
+                        let newEmbed = new discord_js_1.EmbedBuilder()
+                            .setTitle('Daily Quiz Bowl')
+                            .setDescription(embed.description + prompt + '.')
+                            .setFields(embed.fields)
+                            .setFooter(embed.footer);
+                        message.edit({ embeds: [newEmbed] });
+                    }
+                }
+            }));
+        }
+        console.log(hour);
+    }));
+    runtimeEvents.on('5minute', () => {
+        data_1.default.write();
+    });
+}));
+client.on('messageDelete', (message) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c, _d, _e, _f;
+    if ((_b = message.author) === null || _b === void 0 ? void 0 : _b.bot)
+        return;
+    let channelID = data_1.default.getGuild((_c = message.guild) === null || _c === void 0 ? void 0 : _c.id).settings.loggingChannel;
+    let channel = (_d = message.guild) === null || _d === void 0 ? void 0 : _d.channels.cache.get(channelID.toString());
+    if (channel instanceof discord_js_1.TextChannel) {
+        if (message.content == undefined || message.content.length < 256) {
+            let embed = new discord_js_1.EmbedBuilder()
+                .setColor('Red')
+                .setTitle('Message Deleted')
+                .setDescription(`Message sent by <@${(_e = message.author) === null || _e === void 0 ? void 0 : _e.id}> deleted in <#${message.channel.id}>`)
+                .addFields([{ name: 'Content', value: (message.content) ? message.content : 'No Message Content', inline: false }])
+                .setTimestamp(message.createdAt);
+            channel.send({ embeds: [embed], files: Array.from(message.attachments.values()) });
+        }
+        else if (message.content) {
+            let embed = new discord_js_1.EmbedBuilder()
+                .setColor('Red')
+                .setTitle('Message Deleted')
+                .setDescription(`Message sent by <@${(_f = message.author) === null || _f === void 0 ? void 0 : _f.id}> deleted in <#${message.channel.id}>`)
+                .addFields([{ name: 'Content', value: 'Posted Above', inline: false }])
+                .setTimestamp(message.createdAt);
+            channel.send({ embeds: [embed], files: Array.from(message.attachments.values()), content: message.content });
+        }
+    }
+}));
 client.on('messageCreate', message => {
     // Add xp on message and game responses
+    if (message.content.length > 5) {
+        if (message.guild) {
+            let serverManager = data_1.default.getGuildManager(message.guild.id);
+            let user = serverManager.getMember(message.author.id);
+            let userManager = new data_1.GuildMemberManager(user);
+            if (userManager.getTimer('message') + 60000 < Date.now()) {
+                userManager.addXP(random(10, 25));
+                userManager.addWallet(random(1, 5));
+                let guser = new data_1.UserManager(userManager.getGlobalUser());
+                guser.addXP(random(1, 5));
+                userManager.setTimer('message', Date.now());
+            }
+        }
+    }
 });
 client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f;
+    var _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
     if (interaction.guildId) {
-        let serverManager = datamanager_1.default.getGuildManager(interaction.guildId);
-        if (!(serverManager instanceof datamanager_1.GuildManager)) {
-            serverManager = new datamanager_1.GuildManager(datamanager_1.default.registerGuild(interaction.guildId));
+        let serverManager = data_1.default.getGuildManager(interaction.guildId);
+        if (!(serverManager instanceof data_1.GuildManager)) {
+            serverManager = new data_1.GuildManager(data_1.default.registerGuild(interaction.guildId));
         }
         let user = serverManager.getMember(interaction.user.id);
-        let userManager = new datamanager_1.GuildMemberManager(user);
+        let userManager = new data_1.GuildMemberManager(user);
         if (interaction.isChatInputCommand()) {
             if (typeof interaction.guildId !== "string")
                 return;
             switch (interaction.commandName) {
                 //Xp Commands
+                case 'blackjack':
+                    {
+                        //mainChannel: 'string',
+                        //qbChannel: 'string',
+                        //loggingChannel: 'string',
+                        //maniaChannel: 'thread',
+                        //maniaGames: 'string',
+                        //gameThread: 'thread'
+                    }
+                    break;
                 case 'leaderboard':
                     {
                         let list = serverManager.members.sort((a, b) => b.xp - a.xp);
@@ -151,7 +263,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                         for (let i = 0; i < 10; i++) {
                             const user = list[i];
                             if (user) {
-                                let username = (_a = interaction.guild) === null || _a === void 0 ? void 0 : _a.members.cache.get(user.id);
+                                let username = (_g = interaction.guild) === null || _g === void 0 ? void 0 : _g.members.cache.get(user.id);
                                 let field = { name: username ? username.displayName : user.id, value: user.xp.toString(), inline: false };
                                 users.push(field);
                             }
@@ -186,7 +298,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                             switch (int.customId) {
                                 case 'gem':
                                     title = 'Global Gems Leaderboard';
-                                    list = datamanager_1.default.getGlobalUsers().sort((a, b) => b.gems - a.gems);
+                                    list = data_1.default.getGlobalUsers().sort((a, b) => b.gems - a.gems);
                                     for (let i = 0; i < 10; i++) {
                                         const user = list[i];
                                         if (user) {
@@ -198,7 +310,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                                     break;
                                 case 'gxp':
                                     title = 'Global XP Leaderboard';
-                                    list = datamanager_1.default.getGlobalUsers().sort((a, b) => b.xp - a.xp);
+                                    list = data_1.default.getGlobalUsers().sort((a, b) => b.xp - a.xp);
                                     for (let i = 0; i < 10; i++) {
                                         const user = list[i];
                                         if (user) {
@@ -244,16 +356,62 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                         });
                     }
                     break;
+                case 'answer':
+                    {
+                        let answer = interaction.options.getString('answer');
+                        let qb = activeQB.find(qb => qb.channel == interaction.channelId);
+                        if (answer && qb) {
+                            let response = yield (qb === null || qb === void 0 ? void 0 : qb.checkanswer(answer));
+                            let user = new data_1.GuildMemberManager(serverManager.getMember(interaction.user.id));
+                            console.log(user.getTimer('qb'));
+                            if (user.getTimer('qb') < qb.startTime) {
+                                if (response == 'accept') {
+                                    if (qb.open) {
+                                        interaction.reply({ content: 'Correct Answer! 1000 xp and 50 coins has been awarded for being first.', ephemeral: true });
+                                        user.addXP(1000);
+                                        user.addWallet(50);
+                                        let message = (_h = interaction.channel) === null || _h === void 0 ? void 0 : _h.messages.cache.get(qb.message);
+                                        if (message) {
+                                            let embed = message.embeds[0];
+                                            let newEmbed = new discord_js_1.EmbedBuilder()
+                                                .setTitle('Daily Quiz Bowl')
+                                                .setDescription(embed.description)
+                                                .setFields(embed.fields)
+                                                .addFields([{ name: 'First Answerer', value: `${interaction.user.displayName}`, inline: false }])
+                                                .setFooter(embed.footer);
+                                            message.edit({ embeds: [newEmbed] });
+                                        }
+                                    }
+                                    else {
+                                        interaction.reply({ content: 'Correct Answer! 250 xp and 10 coins has been awarded for answering.', ephemeral: true });
+                                        user.addXP(250);
+                                        user.addWallet(10);
+                                    }
+                                    user.setTimer('qb', Date.now());
+                                }
+                                else {
+                                    interaction.reply({ content: response + qb.answer, ephemeral: true });
+                                }
+                            }
+                            else {
+                                interaction.reply({ content: 'Come back tomorrow for a new prompt.', ephemeral: true });
+                            }
+                        }
+                        else {
+                            interaction.reply({ ephemeral: true, content: 'No Active Quiz Bowl' });
+                        }
+                    }
+                    break;
                 case 'level':
                     { // Untested 
-                        let auser = (_b = interaction.options.get("user")) === null || _b === void 0 ? void 0 : _b.user;
+                        let auser = (_j = interaction.options.get("user")) === null || _j === void 0 ? void 0 : _j.user;
                         if (auser) {
                             auser = interaction.user;
                             user = serverManager.getMember(auser.id);
                         }
                         if (!auser)
                             return;
-                        let attachment = new discord_js_1.AttachmentBuilder(yield getImage(new datamanager_1.GuildMemberManager(user), interaction.user));
+                        let attachment = new discord_js_1.AttachmentBuilder(yield getImage(new data_1.GuildMemberManager(user), interaction.user));
                         interaction.reply({ files: [attachment] });
                     }
                     break;
@@ -295,7 +453,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                             let currency = random(25, 50);
                             userManager.addXP(xp);
                             userManager.addWallet(currency);
-                            let guser = new datamanager_1.UserManager(userManager.getGlobalUser());
+                            let guser = new data_1.UserManager(userManager.getGlobalUser());
                             guser.addGems(gem);
                             guser.addXP(xp);
                             let embed = new discord_js_1.EmbedBuilder()
@@ -313,7 +471,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                     }
                     break;
                 case 'flip': { // Untested Code
-                    let bet = (_c = interaction.options.get('bet')) === null || _c === void 0 ? void 0 : _c.value;
+                    let bet = (_k = interaction.options.get('bet')) === null || _k === void 0 ? void 0 : _k.value;
                     if (typeof bet == 'number' && user.balance.wallet > bet) {
                         let win = random(0, 1);
                         let embed = new discord_js_1.EmbedBuilder()
@@ -343,131 +501,241 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                 case 'setup':
                     {
                         if (checkOwner(interaction, true) && !(interaction.channel instanceof discord_js_1.StageChannel)) {
+                            function convertToCompliant(string) {
+                                const regex = /[^a-z0-9_-]/g;
+                                return string.replace(regex, '');
+                            }
+                            yield ((_l = interaction.guild) === null || _l === void 0 ? void 0 : _l.channels.fetch());
+                            let backOption = { label: 'Back', value: 'back' };
+                            let channels = (_m = interaction.guild) === null || _m === void 0 ? void 0 : _m.channels.cache.filter(c => c.type == discord_js_1.ChannelType.GuildText);
+                            let channelOptions = [];
+                            channels === null || channels === void 0 ? void 0 : channels.forEach(c => {
+                                channelOptions.push({ label: convertToCompliant(c.name), value: c.id });
+                            });
+                            let threadChannels = (_o = interaction.guild) === null || _o === void 0 ? void 0 : _o.channels.cache.filter(c => c.type == discord_js_1.ChannelType.GuildForum);
+                            let threadChannelOptions = [];
+                            threadChannels === null || threadChannels === void 0 ? void 0 : threadChannels.forEach(c => {
+                                threadChannelOptions.push({ label: convertToCompliant(c.name), value: c.id });
+                            });
+                            threadChannelOptions.push(backOption);
+                            channelOptions.push(backOption);
+                            let guild = data_1.default.getGuild(interaction.guildId);
                             let embed = new discord_js_1.EmbedBuilder()
                                 .setTitle('Server Setup Menu')
-                                .setDescription('Use the selection menu below to modify different parts of the server.');
+                                .setDescription('Use the selection menu below to modify different parts of the server.')
+                                .addFields([
+                                { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                            ]);
                             let row = new discord_js_1.ActionRowBuilder()
                                 .addComponents(new discord_js_1.StringSelectMenuBuilder()
                                 .addOptions([
                                 {
-                                    label: 'Games Channel',
-                                    value: 'gchan'
+                                    label: 'Timed Games Channel',
+                                    value: 'tgchan'
                                 },
                                 {
-                                    label: 'Games (Enabled/Disabled)',
-                                    value: 'gbool'
+                                    label: 'Daily Quiz Bowl Channel',
+                                    value: 'dqbchan'
                                 },
                                 {
-                                    label: 'Games Delay',
-                                    value: 'gdelay'
+                                    label: 'Logging Channel',
+                                    value: 'logchan'
+                                },
+                                {
+                                    label: 'Mania Channel',
+                                    value: 'manchan'
+                                },
+                                {
+                                    label: 'Mania Games',
+                                    value: 'mgchan'
+                                },
+                                {
+                                    label: 'Game Thread Channel',
+                                    value: 'gtchan'
                                 }
                             ])
                                 .setCustomId('setup'));
-                            interaction.reply({ embeds: [embed], components: [row] });
-                            let collect = (_d = interaction.channel) === null || _d === void 0 ? void 0 : _d.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                            let response = yield interaction.reply({ embeds: [embed], components: [row] });
+                            const message = yield interaction.fetchReply();
+                            let collect = (_p = interaction.channel) === null || _p === void 0 ? void 0 : _p.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => (c.user.id == interaction.user.id && c.customId == 'setup' && c.message.id == message.id) });
                             function collector(collect) {
                                 collect === null || collect === void 0 ? void 0 : collect.on('collect', (int) => __awaiter(this, void 0, void 0, function* () {
-                                    var _a, _b, _c;
+                                    var _a, _b, _c, _d, _e;
                                     collect.stop();
                                     switch (int.values[0]) {
-                                        case 'gdelay':
+                                        case 'tgchan':
                                             {
-                                                let emb = new discord_js_1.EmbedBuilder()
-                                                    .setTitle('Set Game Delay')
-                                                    .setDescription('Select a number below in hours.');
+                                                let embed2 = new discord_js_1.EmbedBuilder()
+                                                    .setTitle('Timed Games Channel Setup')
+                                                    .setDescription('Select the channel you would like to set as the timed games channel. Select back to go back.');
                                                 let row2 = new discord_js_1.ActionRowBuilder()
                                                     .addComponents(new discord_js_1.StringSelectMenuBuilder()
-                                                    .addOptions([
-                                                    {
-                                                        label: '1',
-                                                        value: '1'
-                                                    },
-                                                    {
-                                                        label: '2',
-                                                        value: '2'
-                                                    },
-                                                    {
-                                                        label: '3',
-                                                        value: '3'
-                                                    },
-                                                    {
-                                                        label: '4',
-                                                        value: '4',
-                                                    },
-                                                    {
-                                                        label: '5',
-                                                        value: '5',
-                                                    }, {
-                                                        label: '6',
-                                                        value: '6',
-                                                    }
-                                                ])
-                                                    .setCustomId('delay'));
-                                                yield int.update({ embeds: [emb], components: [row2] });
-                                                let collect = (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.createMessageComponentCollector({ filter: t => t.customId == 'delay' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
-                                                collect === null || collect === void 0 ? void 0 : collect.on('collect', (int) => __awaiter(this, void 0, void 0, function* () {
-                                                    let guild = datamanager_1.default.getGuild(interaction.guildId);
-                                                    guild.settings.gameDelay = Number(int.values[0]) * 3600000;
-                                                    let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
-                                                    if (collect) {
-                                                        yield int.update({ embeds: [embed], components: [row] });
-                                                        collector(collect);
-                                                    }
-                                                }));
-                                            }
-                                            break;
-                                        case 'gchan':
-                                            {
-                                                let emb = new discord_js_1.EmbedBuilder()
-                                                    .setTitle('Set Game Channel')
-                                                    .setDescription('Select a channel below.');
-                                                let row2 = new discord_js_1.ActionRowBuilder()
-                                                    .addComponents(new discord_js_1.ChannelSelectMenuBuilder()
-                                                    .setCustomId('channel')
-                                                    .setChannelTypes([discord_js_1.ChannelType.GuildText]));
-                                                yield int.update({ embeds: [emb], components: [row2] });
-                                                let collect = (_b = interaction.channel) === null || _b === void 0 ? void 0 : _b.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.ChannelSelect, idle: 120000, max: 1 });
+                                                    .addOptions(channelOptions)
+                                                    .setCustomId('channel'));
+                                                yield int.update({ embeds: [embed2], components: [row2] });
+                                                let collect = (_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
                                                 collect === null || collect === void 0 ? void 0 : collect.on('collect', (channel) => __awaiter(this, void 0, void 0, function* () {
-                                                    let guild = datamanager_1.default.getGuild(interaction.guildId);
-                                                    guild.settings.mainChannel = channel.values[0];
+                                                    if (channel.values[0] !== 'back') {
+                                                        let guild = data_1.default.getGuild(interaction.guildId);
+                                                        guild.settings.mainChannel = channel.values[0];
+                                                    }
                                                     let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
                                                     if (collect) {
+                                                        let embed = new discord_js_1.EmbedBuilder()
+                                                            .setTitle('Server Setup Menu')
+                                                            .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                            .addFields([
+                                                            { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                            { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                            { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                            { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                            { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                        ]);
                                                         yield channel.update({ embeds: [embed], components: [row] });
                                                         collector(collect);
                                                     }
                                                 }));
                                             }
                                             break;
-                                        case 'gbool':
-                                            let emb = new discord_js_1.EmbedBuilder()
-                                                .setTitle('Set if games are enabled.')
-                                                .setDescription('Select Enabled or Disabled');
-                                            let row2 = new discord_js_1.ActionRowBuilder()
-                                                .addComponents(new discord_js_1.StringSelectMenuBuilder()
-                                                .addOptions([
-                                                {
-                                                    label: 'Enabled',
-                                                    value: 'true'
-                                                },
-                                                {
-                                                    label: 'Disabled',
-                                                    value: 'false'
-                                                }
-                                            ])
-                                                .setCustomId('bool'));
-                                            yield int.update({ embeds: [emb], components: [row2] });
-                                            let collect = (_c = interaction.channel) === null || _c === void 0 ? void 0 : _c.createMessageComponentCollector({ filter: t => t.customId == 'bool' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
-                                            collect === null || collect === void 0 ? void 0 : collect.on('collect', (int) => __awaiter(this, void 0, void 0, function* () {
-                                                let guild = datamanager_1.default.getGuild(interaction.guildId);
-                                                guild.settings.gameToggle = eval(int.values[0]);
-                                                let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
-                                                if (collect) {
-                                                    yield int.update({ embeds: [embed], components: [row] });
-                                                    collector(collect);
-                                                }
-                                            }));
+                                        case 'dqbchan':
+                                            {
+                                                let embed2 = new discord_js_1.EmbedBuilder()
+                                                    .setTitle('Quiz Bowl Setup')
+                                                    .setDescription('Select the channel you would like to set as the quiz bowl channel. Select back to go back.');
+                                                let row2 = new discord_js_1.ActionRowBuilder()
+                                                    .addComponents(new discord_js_1.StringSelectMenuBuilder()
+                                                    .addOptions(channelOptions)
+                                                    .setCustomId('channel'));
+                                                yield int.update({ embeds: [embed2], components: [row2] });
+                                                let collect = (_b = interaction.channel) === null || _b === void 0 ? void 0 : _b.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
+                                                collect === null || collect === void 0 ? void 0 : collect.on('collect', (channel) => __awaiter(this, void 0, void 0, function* () {
+                                                    if (channel.values[0] !== 'back') {
+                                                        let guild = data_1.default.getGuild(interaction.guildId);
+                                                        guild.settings.qbChannel = channel.values[0];
+                                                    }
+                                                    let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                                    if (collect) {
+                                                        let embed = new discord_js_1.EmbedBuilder()
+                                                            .setTitle('Server Setup Menu')
+                                                            .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                            .addFields([
+                                                            { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                            { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                            { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                            { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                            { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                        ]);
+                                                        yield channel.update({ embeds: [embed], components: [row] });
+                                                        collector(collect);
+                                                    }
+                                                }));
+                                            }
                                             break;
-                                        default:
+                                        case 'logchan':
+                                            {
+                                                let embed2 = new discord_js_1.EmbedBuilder()
+                                                    .setTitle('Log Channel Setup')
+                                                    .setDescription('Select the channel you would like to set as the logging channel. Select back to go back.');
+                                                let row2 = new discord_js_1.ActionRowBuilder()
+                                                    .addComponents(new discord_js_1.StringSelectMenuBuilder()
+                                                    .addOptions(channelOptions)
+                                                    .setCustomId('channel'));
+                                                yield int.update({ embeds: [embed2], components: [row2] });
+                                                let collect = (_c = interaction.channel) === null || _c === void 0 ? void 0 : _c.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
+                                                collect === null || collect === void 0 ? void 0 : collect.on('collect', (channel) => __awaiter(this, void 0, void 0, function* () {
+                                                    if (channel.values[0] !== 'back') {
+                                                        let guild = data_1.default.getGuild(interaction.guildId);
+                                                        guild.settings.loggingChannel = channel.values[0];
+                                                    }
+                                                    let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                                    if (collect) {
+                                                        let embed = new discord_js_1.EmbedBuilder()
+                                                            .setTitle('Server Setup Menu')
+                                                            .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                            .addFields([
+                                                            { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                            { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                            { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                            { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                            { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                        ]);
+                                                        yield channel.update({ embeds: [embed], components: [row] });
+                                                        collector(collect);
+                                                    }
+                                                }));
+                                            }
+                                            break;
+                                        case 'manchan':
+                                            {
+                                                let embed2 = new discord_js_1.EmbedBuilder()
+                                                    .setTitle('Mania Setup')
+                                                    .setDescription('Select the channel you would like to set as the mania channel. Select back to go back.');
+                                                let row2 = new discord_js_1.ActionRowBuilder()
+                                                    .addComponents(new discord_js_1.StringSelectMenuBuilder()
+                                                    .addOptions(channelOptions)
+                                                    .setCustomId('channel'));
+                                                yield int.update({ embeds: [embed2], components: [row2] });
+                                                let collect = (_d = interaction.channel) === null || _d === void 0 ? void 0 : _d.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
+                                                collect === null || collect === void 0 ? void 0 : collect.on('collect', (channel) => __awaiter(this, void 0, void 0, function* () {
+                                                    if (channel.values[0] !== 'back') {
+                                                        let guild = data_1.default.getGuild(interaction.guildId);
+                                                        guild.settings.maniaChannel = channel.values[0];
+                                                    }
+                                                    let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                                    if (collect) {
+                                                        let embed = new discord_js_1.EmbedBuilder()
+                                                            .setTitle('Server Setup Menu')
+                                                            .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                            .addFields([
+                                                            { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                            { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                            { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                            { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                            { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                        ]);
+                                                        yield channel.update({ embeds: [embed], components: [row] });
+                                                        collector(collect);
+                                                    }
+                                                }));
+                                            }
+                                            break;
+                                        case 'gtchan':
+                                            {
+                                                let embed2 = new discord_js_1.EmbedBuilder()
+                                                    .setTitle('Game Thread Setup')
+                                                    .setDescription('Select the threads channel you would like to set as the main channel. Select back to go back.');
+                                                let row2 = new discord_js_1.ActionRowBuilder()
+                                                    .addComponents(new discord_js_1.StringSelectMenuBuilder()
+                                                    .addOptions(threadChannelOptions)
+                                                    .setCustomId('channel'));
+                                                yield int.update({ embeds: [embed2], components: [row2] });
+                                                let collect = (_e = interaction.channel) === null || _e === void 0 ? void 0 : _e.createMessageComponentCollector({ filter: t => t.customId == 'channel' && t.user.id == interaction.user.id, componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1 });
+                                                collect === null || collect === void 0 ? void 0 : collect.on('collect', (channel) => __awaiter(this, void 0, void 0, function* () {
+                                                    if (channel.values[0] !== 'back') {
+                                                        let guild = data_1.default.getGuild(interaction.guildId);
+                                                        guild.settings.gameThread = channel.values[0];
+                                                    }
+                                                    let collect = interaction.channel.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect, idle: 120000, max: 1, filter: c => c.user.id == interaction.user.id && c.customId == 'setup' });
+                                                    if (collect) {
+                                                        let embed = new discord_js_1.EmbedBuilder()
+                                                            .setTitle('Server Setup Menu')
+                                                            .setDescription('Use the selection menu below to modify different parts of the server.')
+                                                            .addFields([
+                                                            { name: 'Timed Games Channel', value: guild.settings.mainChannel.toString(), inline: false },
+                                                            { name: 'Daily Quiz Bowl Channel', value: guild.settings.qbChannel.toString() },
+                                                            { name: 'Logging Channel', value: guild.settings.loggingChannel.toString() },
+                                                            { name: 'Mania Channel', value: guild.settings.maniaChannel.toString() },
+                                                            { name: 'Game Thread Channel', value: guild.settings.gameThread.toString() }
+                                                        ]);
+                                                        yield channel.update({ embeds: [embed], components: [row] });
+                                                        collector(collect);
+                                                    }
+                                                }));
+                                            }
                                             break;
                                     }
                                 }));
@@ -483,8 +751,8 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                         if (checkModerator(interaction, true)) {
                             switch (interaction.commandName) {
                                 case 'xp':
-                                    let amount = (_e = interaction.options.get('amount')) === null || _e === void 0 ? void 0 : _e.value;
-                                    let type = (_f = interaction.options.get('type')) === null || _f === void 0 ? void 0 : _f.value;
+                                    let amount = (_q = interaction.options.get('amount')) === null || _q === void 0 ? void 0 : _q.value;
+                                    let type = (_r = interaction.options.get('type')) === null || _r === void 0 ? void 0 : _r.value;
                                     //let user = serverManager.getUser((interaction.options.get('user')?.value as unknown as User).id)
                                     if (typeof type == 'string' && typeof amount == 'number') {
                                         switch (type) {

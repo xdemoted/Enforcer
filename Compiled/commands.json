@@ -4,6 +4,26 @@
         "description": "Setup a server's settings"
     },
     {
+        "name": "answer",
+        "description": "Use during a quizbowl match to answer a question",
+        "options": [
+            {
+                "type": 3,
+                "name": "answer",
+                "description": "answer",
+                "required": true
+            }
+        ]
+    },
+    {
+        "name": "ping",
+        "description": "Ping the bot"
+    },
+    {
+        "name": "invite",
+        "description": "Invite the bot to your server"
+    },
+    {
         "name": "crash",
         "description": "I seek death"
     },
