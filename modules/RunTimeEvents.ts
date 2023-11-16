@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-export class RunTimeEventsDebug extends EventEmitter {
+export class RunTimeEvents extends EventEmitter {
   private hourlyInterval: NodeJS.Timeout;
   private dailyInterval: NodeJS.Timeout;
   private minuteInterval: NodeJS.Timeout;
@@ -14,8 +14,8 @@ export class RunTimeEventsDebug extends EventEmitter {
       this.emit('hour',new Date().getHours())
       this.hourlyInterval = setInterval(() => {
         this.emit('hour',new Date().getHours())
-      }, 60 * 60 * 1000); // emit event every hour
-    }, timeUntilNextHour); // emit event at the next hour
+      }, 60 * 60 * 1000);
+    }, timeUntilNextHour);
 
     const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
     const timeUntilTomorrow = tomorrow.getTime() - now.getTime();
@@ -24,8 +24,8 @@ export class RunTimeEventsDebug extends EventEmitter {
       this.emit('daily')
       this.dailyInterval = setInterval(() => {
         this.emit('daily')
-      }, 24 * 60 * 60 * 1000); // emit event every day
-    }, timeUntilTomorrow); // emit event tomorrow at midnight
+      }, 24 * 60 * 60 * 1000);
+    }, timeUntilTomorrow);
     this.minuteInterval = setInterval(() => {
       this.emit('5minute');
     }, 60 * 5000); // emit event every 5 minutes
@@ -36,7 +36,7 @@ export class RunTimeEventsDebug extends EventEmitter {
     clearInterval(this.minuteInterval);
   }
 }
-export class RunTimeEvents extends EventEmitter {
+export class RunTimeEventsDebug extends EventEmitter {
   private hourlyInterval: NodeJS.Timeout;
   constructor() {
     super()

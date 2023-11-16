@@ -103,6 +103,7 @@ client.on('ready', async () => {
                         .setTitle('Daily Quiz Bowl')
                         .setDescription(quizbowl.prompt[0] + '.')
                         .setFooter({ text: 'Hints every 2 hours, new prompt at 7 AM CST, use the /answer command to answer.' })
+                        .setColor('Green')
                     if (qb) {
                         let message = channel.messages.cache.get(qb.message)
                         if (message) {
@@ -124,7 +125,6 @@ client.on('ready', async () => {
                 let channel = client.channels.cache.get(qb.channel)
                 if (prompt && channel instanceof TextChannel) {
                     let message = channel.messages.cache.get(qb.message)
-                    console.log(message)
                     if (message) {
                         let embed = message.embeds[0]
                         let newEmbed = new EmbedBuilder()
@@ -132,12 +132,12 @@ client.on('ready', async () => {
                             .setDescription(embed.description + prompt + '.')
                             .setFields(embed.fields)
                             .setFooter(embed.footer)
+                            .setColor('Green')
                         message.edit({ embeds: [newEmbed] })
                     }
                 }
             })
         }
-        console.log(hour)
     })
     runtimeEvents.on('5minute', () => {
         data.write()
@@ -307,7 +307,6 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                     if (answer && qb) {
                         let response = await qb?.checkanswer(answer)
                         let user = new GuildMemberManager(serverManager.getMember(interaction.user.id))
-                        console.log(user.getTimer('qb'))
                         if (user.getTimer('qb') < qb.startTime) {
                             if (response == 'accept') {
                                 if (qb.open) {
@@ -323,6 +322,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                                             .setFields(embed.fields)
                                             .addFields([{name: 'First Answerer', value: `${interaction.user.displayName}`, inline: false }])
                                             .setFooter(embed.footer)
+                                            .setColor('Green')
                                         message.edit({embeds:[newEmbed]})
                                     }
                                 } else {

@@ -3,9 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RunTimeEvents = exports.RunTimeEventsDebug = void 0;
+exports.RunTimeEventsDebug = exports.RunTimeEvents = void 0;
 const events_1 = __importDefault(require("events"));
-class RunTimeEventsDebug extends events_1.default {
+class RunTimeEvents extends events_1.default {
     constructor() {
         super();
         const now = new Date();
@@ -15,16 +15,16 @@ class RunTimeEventsDebug extends events_1.default {
             this.emit('hour', new Date().getHours());
             this.hourlyInterval = setInterval(() => {
                 this.emit('hour', new Date().getHours());
-            }, 60 * 60 * 1000); // emit event every hour
-        }, timeUntilNextHour); // emit event at the next hour
+            }, 60 * 60 * 1000);
+        }, timeUntilNextHour);
         const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
         const timeUntilTomorrow = tomorrow.getTime() - now.getTime();
         this.dailyInterval = setTimeout(() => {
             this.emit('daily');
             this.dailyInterval = setInterval(() => {
                 this.emit('daily');
-            }, 24 * 60 * 60 * 1000); // emit event every day
-        }, timeUntilTomorrow); // emit event tomorrow at midnight
+            }, 24 * 60 * 60 * 1000);
+        }, timeUntilTomorrow);
         this.minuteInterval = setInterval(() => {
             this.emit('5minute');
         }, 60 * 5000); // emit event every 5 minutes
@@ -35,8 +35,8 @@ class RunTimeEventsDebug extends events_1.default {
         clearInterval(this.minuteInterval);
     }
 }
-exports.RunTimeEventsDebug = RunTimeEventsDebug;
-class RunTimeEvents extends events_1.default {
+exports.RunTimeEvents = RunTimeEvents;
+class RunTimeEventsDebug extends events_1.default {
     constructor() {
         super();
         let time = 13;
@@ -52,4 +52,4 @@ class RunTimeEvents extends events_1.default {
         clearInterval(this.hourlyInterval);
     }
 }
-exports.RunTimeEvents = RunTimeEvents;
+exports.RunTimeEventsDebug = RunTimeEventsDebug;

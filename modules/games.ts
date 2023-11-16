@@ -63,7 +63,6 @@ export class dailyQB {
             const response = await axios.get('https://qbreader.org/api/check-answer/', { params: { answerline: this.answer, givenAnswer: answer } });
             return response.data.directive
         } catch (error) {
-            console.error(error);
             return 'error';
         }
     }

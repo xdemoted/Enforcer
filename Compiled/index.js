@@ -145,7 +145,8 @@ client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
                     let embed = new discord_js_1.EmbedBuilder()
                         .setTitle('Daily Quiz Bowl')
                         .setDescription(quizbowl.prompt[0] + '.')
-                        .setFooter({ text: 'Hints every 2 hours, new prompt at 7 AM CST, use the /answer command to answer.' });
+                        .setFooter({ text: 'Hints every 2 hours, new prompt at 7 AM CST, use the /answer command to answer.' })
+                        .setColor('Green');
                     if (qb) {
                         let message = channel.messages.cache.get(qb.message);
                         if (message) {
@@ -169,20 +170,19 @@ client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
                 let channel = client.channels.cache.get(qb.channel);
                 if (prompt && channel instanceof discord_js_1.TextChannel) {
                     let message = channel.messages.cache.get(qb.message);
-                    console.log(message);
                     if (message) {
                         let embed = message.embeds[0];
                         let newEmbed = new discord_js_1.EmbedBuilder()
                             .setTitle('Daily Quiz Bowl')
                             .setDescription(embed.description + prompt + '.')
                             .setFields(embed.fields)
-                            .setFooter(embed.footer);
+                            .setFooter(embed.footer)
+                            .setColor('Green');
                         message.edit({ embeds: [newEmbed] });
                     }
                 }
             }));
         }
-        console.log(hour);
     }));
     runtimeEvents.on('5minute', () => {
         data_1.default.write();
@@ -363,7 +363,6 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                         if (answer && qb) {
                             let response = yield (qb === null || qb === void 0 ? void 0 : qb.checkanswer(answer));
                             let user = new data_1.GuildMemberManager(serverManager.getMember(interaction.user.id));
-                            console.log(user.getTimer('qb'));
                             if (user.getTimer('qb') < qb.startTime) {
                                 if (response == 'accept') {
                                     if (qb.open) {
@@ -378,7 +377,8 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                                                 .setDescription(embed.description)
                                                 .setFields(embed.fields)
                                                 .addFields([{ name: 'First Answerer', value: `${interaction.user.displayName}`, inline: false }])
-                                                .setFooter(embed.footer);
+                                                .setFooter(embed.footer)
+                                                .setColor('Green');
                                             message.edit({ embeds: [newEmbed] });
                                         }
                                     }
@@ -390,7 +390,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                                     user.setTimer('qb', Date.now());
                                 }
                                 else {
-                                    interaction.reply({ content: response + qb.answer, ephemeral: true });
+                                    interaction.reply({ content: response, ephemeral: true });
                                 }
                             }
                             else {

@@ -76,7 +76,6 @@ class dailyQB {
                 return response.data.directive;
             }
             catch (error) {
-                console.error(error);
                 return 'error';
             }
         });
