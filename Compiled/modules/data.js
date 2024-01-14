@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.DataManager = exports.CacheData = void 0;
 const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const dataPath = path_1.default.join(__dirname, '../data/serverdata.json');
 class CacheData {
     constructor() {
         this.guilds = [];
@@ -15,10 +17,13 @@ exports.CacheData = CacheData;
 class DataManager {
     constructor() {
         this.get = () => {
-            return require('../data/serverdata.json');
+            return require(dataPath);
         };
         this.write = () => {
-            return fs_1.default.writeFileSync('/workspaces/Enforcer/Compiled/data/serverdata.json', JSON.stringify(this.cacheData));
+            return fs_1.default.writeFileSync(dataPath, JSON.stringify(this.cacheData));
+        };
+        this.listFiles = () => {
+            return fs_1.default.readdirSync('./data');
         };
         this.getGlobalUsers = () => {
             return this.cacheData.users;

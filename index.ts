@@ -1,8 +1,8 @@
 // Imports
 import { AttachmentBuilder, Client, ActionRowBuilder, CommandInteraction, Interaction, TextChannel, SelectMenuInteraction, EmbedField, User, ButtonBuilder, Partials, PermissionFlagsBits, ChannelType, EmbedBuilder, ButtonStyle, ComponentType, StringSelectMenuInteraction, StringSelectMenuBuilder, StageChannel, InteractionCollector, CacheType, GuildMember as DiscordGuildMember, SelectMenuComponentOptionData } from "discord.js";
 import data, { GuildMemberManager, UserManager, DataManager, GuildManager, BaseUser, GlobalUser } from './modules/data'
-import { RunTimeEvents } from "./modules/RunTimeEvents";
-import { dailyQB } from "./modules/games";
+import { RunTimeEvents, RunTimeEventsDebug } from "./modules/RunTimeEvents";
+import { dailyQB, games } from "./modules/games";
 import can from 'canvas';
 
 // Variables
@@ -85,12 +85,19 @@ async function getImage(user: GuildMemberManager | UserManager, dUser: User) {
 
 // Client Events
 client.on('ready', async () => {
+    data.write()
     client.guilds.fetch()
     client.application?.commands.set([])
     client.guilds.cache.forEach(guild => {
         guild.commands.set(require('./commands.json'))
     })
     runtimeEvents.on('hour', async hour => {
+        client.guilds.cache.forEach(guild => {
+            let guildData = data.getGuild(guild.id)
+            let channel = guildData.settings.mainChannel.toString()
+            let gameManager = new games(client, channel)
+            gameManager.init()
+        })
         if (hour == 13) {
             let newList: dailyQB[] = []
             client.guilds.cache.forEach(async guild => {
@@ -379,7 +386,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                     interaction.reply({ embeds: [embed] })
                 }
                     break;
-                case 'daily': { // Time Delay Untested
+                case 'daily': {
                     if (Date.now() >= (userManager.getTimer('daily') + 64800000)) {
                         let xp = random(150, 250)
                         let gem = random(1, 5)

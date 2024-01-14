@@ -128,12 +128,19 @@ function getImage(user, dUser) {
 // Client Events
 client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    data_1.default.write();
     client.guilds.fetch();
     (_a = client.application) === null || _a === void 0 ? void 0 : _a.commands.set([]);
     client.guilds.cache.forEach(guild => {
         guild.commands.set(require('./commands.json'));
     });
     runtimeEvents.on('hour', (hour) => __awaiter(void 0, void 0, void 0, function* () {
+        client.guilds.cache.forEach(guild => {
+            let guildData = data_1.default.getGuild(guild.id);
+            let channel = guildData.settings.mainChannel.toString();
+            let gameManager = new games_1.games(client, channel);
+            gameManager.init();
+        });
         if (hour == 13) {
             let newList = [];
             client.guilds.cache.forEach((guild) => __awaiter(void 0, void 0, void 0, function* () {
@@ -446,7 +453,7 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                     }
                     break;
                 case 'daily':
-                    { // Time Delay Untested
+                    {
                         if (Date.now() >= (userManager.getTimer('daily') + 64800000)) {
                             let xp = random(150, 250);
                             let gem = random(1, 5);

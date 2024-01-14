@@ -1,4 +1,6 @@
 import fs from 'fs'
+import path from 'path'
+const dataPath = path.join(__dirname, '../data/serverdata.json')
 export class CacheData {
     guilds: Guild[]
     users: GlobalUser[]
@@ -13,10 +15,13 @@ export class DataManager {
         this.cacheData = this.get()
     }
     get = () => {
-        return require('../data/serverdata.json')
+        return require(dataPath)
     }
     write = () => {
-        return fs.writeFileSync('/workspaces/Enforcer/Compiled/data/serverdata.json', JSON.stringify(this.cacheData))
+        return fs.writeFileSync(dataPath, JSON.stringify(this.cacheData))
+    }
+    listFiles = () => {
+        return fs.readdirSync('./data')
     }
     getGlobalUsers = () => {
         return this.cacheData.users

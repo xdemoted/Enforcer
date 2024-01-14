@@ -146,30 +146,6 @@
         ]
     },
     {
-        "name": "addbounty",
-        "description": "Track a hypickle player and get pinged everytime they log on.",
-        "options": [
-            {
-                "type": 3,
-                "name": "username",
-                "description": "Provide their current username, use namemc to check for name changes",
-                "required": true
-            }
-        ]
-    },
-    {
-        "name": "removebounty",
-        "description": "Untrack a hypickle player and don't get pinged everytime they log on.",
-        "options": [
-            {
-                "type": 3,
-                "name": "username",
-                "description": "Provide their current username, use namemc to check for name changes",
-                "required": true
-            }
-        ]
-    },
-    {
         "name": "cah",
         "description": "Experimental Feature"
     },
