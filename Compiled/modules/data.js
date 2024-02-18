@@ -3,10 +3,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.DataManager = exports.CacheData = void 0;
+exports.manifest = exports.StatManager = exports.CollectorManager = exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.stats = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.MessageManager = exports.DataManager = exports.CacheData = exports.eventEmitter = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const dataPath = path_1.default.join(__dirname, '../data/serverdata.json');
+const events_1 = __importDefault(require("events"));
+const dataPath = path_1.default.join(__dirname, '../assets/stored/data.json');
+class eventEmitter extends events_1.default {
+    constructor() {
+        super();
+    }
+    levelUp(userID, channelID) {
+        this.emit('levelUp', userID, channelID);
+    }
+}
+exports.eventEmitter = eventEmitter;
+let emitter = new eventEmitter();
 class CacheData {
     constructor() {
         this.guilds = [];
@@ -16,6 +27,7 @@ class CacheData {
 exports.CacheData = CacheData;
 class DataManager {
     constructor() {
+        this.eventEmitter = emitter;
         this.get = () => {
             return require(dataPath);
         };
@@ -23,7 +35,7 @@ class DataManager {
             return fs_1.default.writeFileSync(dataPath, JSON.stringify(this.cacheData));
         };
         this.listFiles = () => {
-            return fs_1.default.readdirSync('./data');
+            return fs_1.default.readdirSync('./assets/stored');
         };
         this.getGlobalUsers = () => {
             return this.cacheData.users;
@@ -62,8 +74,40 @@ class DataManager {
         users.sort((a, b) => b.xp - a.xp);
         return users.indexOf(fakeUser) + 1;
     }
+    getUser(id) {
+        let user = this.cacheData.users.find(user => user.id == id);
+        if (user) {
+            return user;
+        }
+        return this.registerUser(id);
+    }
+    registerUser(id) {
+        let newUser = new GlobalUser(id);
+        this.cacheData.users.push(newUser);
+        return newUser;
+    }
 }
 exports.DataManager = DataManager;
+class MessageManager {
+    static getMessage(messagePath, args) {
+        let Messages = require('../assets/messages.json');
+        let path = messagePath.split('.');
+        for (let i = 0; i < path.length; i++) {
+            if (Messages == undefined)
+                return "**Message Load Error**: Message Path Invalid";
+            Messages = Messages[path[i]];
+        }
+        if (Messages) {
+            for (let i = 0; i < args.length; i++) {
+                console.log(args[i]);
+                Messages = Messages.replace(`{${i}}`, args[i]);
+            }
+            return Messages;
+        }
+        return "**Message Load Error**: Message Path Invalid";
+    }
+}
+exports.MessageManager = MessageManager;
 // Guild Classes
 //
 class GuildSettings {
@@ -75,6 +119,7 @@ class GuildSettings {
         this.maniaGames = false;
         this.gameThread = false;
         this.gameToggle = false;
+        this.leaderboard = false;
         this.gameDelay = 0;
     }
 }
@@ -142,26 +187,31 @@ class GuildManager {
         this.members = guild.members;
     }
     getRank(xp) {
-        let users = this.guild.members;
-        let fakeUser = new GuildMember('fake', this.guild.id);
-        fakeUser.xp = xp;
-        users = users.slice(0, users.length - 1);
-        users.push(fakeUser);
+        let users = this.guild.members.slice(0, this.guild.members.length - 1);
+        let user = new GuildMember('fake', this.guild.id);
+        user.xp = xp;
+        users.push(user);
         users.sort((a, b) => b.xp - a.xp);
-        return users.indexOf(fakeUser) + 1;
+        return users.indexOf(user) + 1;
     }
 }
 exports.GuildManager = GuildManager;
 // User Data
 //
+class stats {
+    constructor() {
+        this.math = 0;
+        this.trivia = 0;
+        this.unscramble = 0;
+        this.messagesSent = 0;
+    }
+}
+exports.stats = stats;
 class BaseUser {
     constructor(id) {
         this.id = id;
         this.xp = 0;
-        this.stats = {
-            gamesWon: 0,
-            messagesSent: 0
-        };
+        this.stats = new stats();
         this.timerStorage = [];
     }
 }
@@ -169,7 +219,7 @@ exports.BaseUser = BaseUser;
 class GlobalUser extends BaseUser {
     constructor(id) {
         super(id);
-        this.namecard = 0;
+        this.namecard = '';
         this.gems = 0;
     }
 }
@@ -186,10 +236,6 @@ class GuildMember extends BaseUser {
         this.inventory = {
             miners: undefined,
             booster: undefined
-        };
-        this.stats = {
-            gamesWon: 0,
-            messagesSent: 0
         };
     }
 }
@@ -235,8 +281,12 @@ class BaseUserManager {
                 this.user.timerStorage.push(timer);
             }
         };
+        this.stats = () => (new StatManager(this.user));
         this.id = user.id;
         this.user = user;
+    }
+    getRank() {
+        return 1;
     }
 }
 exports.BaseUserManager = BaseUserManager;
@@ -270,20 +320,17 @@ class UserManager extends BaseUserManager {
             return this.user.gems;
         };
         // Namecard Manipulation
-        this.setNamecard = (card) => {
-            this.user.namecard = card;
+        this.setNamecard = (url) => {
+            this.user.namecard = url;
             return this.user.namecard;
         };
         this.user = user;
     }
     getRank() {
-        let users = data.cacheData.users;
-        let fakeUser = new GlobalUser('fake');
-        fakeUser.xp = this.user.xp;
+        let users = data.getGlobalUsers();
         users = users.slice(0, users.length - 1);
-        users.push(fakeUser);
         users.sort((a, b) => b.xp - a.xp);
-        return users.indexOf(fakeUser) + 1;
+        return users.indexOf(this.user) + 1;
     }
 }
 exports.UserManager = UserManager;
@@ -291,6 +338,14 @@ class GuildMemberManager extends BaseUserManager {
     constructor(member) {
         super(member);
         // Balance Updates
+        this.addXP = (xp, channel) => {
+            const oldLevel = this.getLevel();
+            this.user.xp += xp;
+            const newLevel = this.getLevel();
+            if (oldLevel < newLevel && channel)
+                emitter.levelUp(this.member.id, channel);
+            return this.user.xp;
+        };
         this.addWallet = (num) => {
             this.member.balance.wallet += num;
             return this.member.balance.wallet;
@@ -340,7 +395,25 @@ class GuildMemberManager extends BaseUserManager {
             data.getGlobalUsers().push(user);
             return user;
         };
+        this.getUserManager = () => {
+            let user = data.getGlobalUsers().find(user => user.id == this.member.id);
+            if (user) {
+                return new UserManager(user);
+            }
+            user = new GlobalUser(this.member.id);
+            data.getGlobalUsers().push(user);
+            return new UserManager(user);
+        };
         this.member = member;
+        let user = data.getGlobalUsers().find(user => user.id == member.id);
+        if (user) {
+            this.userManager = new UserManager(user);
+        }
+        else {
+            user = new GlobalUser(member.id);
+            data.getGlobalUsers().push(new GlobalUser(member.id));
+            this.userManager = new UserManager(user);
+        }
         let guild = data.cacheData.guilds.find(guild => guild.id == member.guildID);
         if (guild) {
             this.guild = guild;
@@ -351,15 +424,48 @@ class GuildMemberManager extends BaseUserManager {
     }
     getRank() {
         let users = this.guild.members;
-        let fakeUser = new GuildMember('fake', this.guild.id);
-        fakeUser.xp = this.member.xp;
         users = this.guild.members.slice(0, users.length - 1);
-        users.push(fakeUser);
         users.sort((a, b) => b.xp - a.xp);
-        return users.indexOf(fakeUser) + 1;
+        return users.indexOf(this.member) + 1;
     }
 }
 exports.GuildMemberManager = GuildMemberManager;
+class CollectorManager {
+    constructor() {
+        this.collector = [];
+        this.add = (collector, tag) => {
+            this.collector.push({ collector: collector, tag: tag });
+        };
+        this.remove = (collector) => {
+            let index = this.collector.findIndex(col => col.collector == collector);
+            if (index >= 0) {
+                this.collector.splice(index, 1);
+            }
+        };
+        this.get = (tag) => {
+            return this.collector.find(col => col.tag == tag);
+        };
+    }
+}
+exports.CollectorManager = CollectorManager;
+class StatManager {
+    constructor(user) {
+        this.user = user;
+    }
+    get(id) {
+        let requested = this.user.stats[id];
+        if (requested != undefined)
+            return requested;
+        return 0;
+    }
+}
+exports.StatManager = StatManager;
+class manifest {
+    constructor() {
+        this.namecards = [];
+    }
+}
+exports.manifest = manifest;
 // Initialize Data
 let data = new DataManager();
 exports.default = data;

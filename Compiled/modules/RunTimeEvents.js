@@ -6,28 +6,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RunTimeEventsDebug = exports.RunTimeEvents = void 0;
 const events_1 = __importDefault(require("events"));
 class RunTimeEvents extends events_1.default {
-    constructor() {
+    constructor(runInstantly) {
         super();
-        const now = new Date();
-        const nextHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0);
-        const timeUntilNextHour = 10000; //nextHour.getTime() - now.getTime();
-        this.hourlyInterval = setTimeout(() => {
-            this.emit('hour', new Date().getHours());
-            this.hourlyInterval = setInterval(() => {
-                this.emit('hour', new Date().getHours());
-            }, 3600000);
-        }, timeUntilNextHour);
-        const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-        const timeUntilTomorrow = tomorrow.getTime() - now.getTime();
-        this.dailyInterval = setTimeout(() => {
-            this.emit('daily');
-            this.dailyInterval = setInterval(() => {
+        setTimeout(() => {
+            const now = new Date();
+            const nextHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0);
+            const timeUntilNextHour = nextHour.getTime() - now.getTime();
+            if (runInstantly) {
                 this.emit('daily');
-            }, 86400000);
-        }, timeUntilTomorrow);
-        this.minuteInterval = setInterval(() => {
-            this.emit('5minute');
-        }, 300000); // emit event every 5 minutes
+                this.emit('hour', new Date().getHours());
+                this.emit('5minute');
+            }
+            this.hourlyInterval = setTimeout(() => {
+                this.emit('hour', new Date().getHours());
+                this.hourlyInterval = setInterval(() => {
+                    this.emit('hour', new Date().getHours());
+                }, 3600000);
+            }, timeUntilNextHour);
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+            const timeUntilTomorrow = tomorrow.getTime() - now.getTime();
+            this.dailyInterval = setTimeout(() => {
+                this.emit('daily');
+                this.dailyInterval = setInterval(() => {
+                    this.emit('daily');
+                }, 86400000);
+            }, timeUntilTomorrow);
+            this.minuteInterval = setInterval(() => {
+                this.emit('5minute');
+            }, 300000); // emit event every 5 minutes
+        }, 5000);
     }
     stop() {
         clearInterval(this.hourlyInterval);

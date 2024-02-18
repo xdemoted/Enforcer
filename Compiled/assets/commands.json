@@ -16,6 +16,18 @@
         ]
     },
     {
+        "name": "namecard",
+        "description": "Copy Image URL and paste here to set as your namecard",
+        "options": [
+            {
+                "type": 3,
+                "name": "url",
+                "description": "url",
+                "required": true
+            }
+        ]
+    },
+    {
         "name": "ping",
         "description": "Ping the bot"
     },
@@ -229,6 +241,10 @@
     {
         "name": "items",
         "description": "Show what items you own."
+    },
+    {
+        "name": "write",
+        "description": "Update the cache for the bot"
     },
     {
         "name": "xp",

@@ -11,9 +11,11 @@
   "dependencies": {
     "axios": "^1.5.1",
     "canvas": "^2.11.2",
-    "discord.js": "^14.13.0"
+    "discord.js": "^14.13.0",
+    "quantize": "^1.0.2"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.8"
+    "@types/jest": "^29.5.8",
+    "@types/quantize": "^1.0.2"
   }
 }

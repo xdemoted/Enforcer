@@ -1,0 +1,8 @@
+{
+    "rewards": {
+        "generic": "<@{0}> answered correctly! Received {1} xp, {2} coins, and {3} gems.",
+        "trivia": {
+            "incorrect": "<@{0}> answered incorrectly! Received {1} xp."
+        }
+    }
+}

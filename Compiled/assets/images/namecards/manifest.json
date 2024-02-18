@@ -1,0 +1,22 @@
+{"namecards": [
+    {
+        "name": "Blue Fire",
+        "path": "blue_fire.png",
+        "cost": 200
+    },
+    {
+        "name": "Twomad",
+        "path": "twomad.png",
+        "cost": 10
+    },
+    {
+        "name": "Astronomy",
+        "path": "astronomy.png",
+        "cost": 200
+    },
+    {
+        "name": "Default",
+        "path": "namecard.png",
+        "cost": 0
+    }
+]}

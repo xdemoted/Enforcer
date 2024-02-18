@@ -35,90 +35,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dailyQB = exports.games = void 0;
+exports.dailyQB = exports.blackjackThread = exports.games = void 0;
 const discord_js_1 = require("discord.js");
 const axios_1 = __importDefault(require("axios"));
 const data_1 = __importStar(require("./data"));
+const RunTimeEvents_1 = require("./RunTimeEvents");
 const utilities_1 = require("./utilities");
-const easyVM = { "*": .05, "-": .475, "+": 0.475 };
-const medVM = { "*": .3, "-": .3, "+": 0.3 };
-const hardVM = { "*": .3, "-": .3, "+": 0.3 };
-const impossibleVM = { "*": .1, "-": .5, "+": 0.4 };
-let valueMap = { "+": 10, "-": 20, "*": 30, "/": 40 };
-const chanceMap = { "*": .2, "-": .3, "+": 0.3 };
-function generateEquation(vm) {
-    let termCount = (0, utilities_1.random)(3, 6);
-    if (vm == impossibleVM) {
-        termCount = (0, utilities_1.random)(100, 200);
+function wordScramble(word) {
+    let scrambledWord = "";
+    const wordArray = word.split("");
+    while (wordArray.length > 0) {
+        const randomIndex = Math.floor(Math.random() * wordArray.length);
+        scrambledWord += wordArray.splice(randomIndex, 1)[0];
     }
-    else if (vm == hardVM) {
-        termCount = (0, utilities_1.random)(6, 9);
-    }
-    let terms = [];
-    let tAvg = 0;
-    let signValue = 0;
-    for (let i = 0; i < termCount; i++) {
-        let term = (0, utilities_1.random)(3, 50);
-        terms.push(term);
-        tAvg = tAvg + term;
-    }
-    tAvg = Math.round(tAvg / termCount);
-    if ((0, utilities_1.random)(0, 1) == 1) {
-        let tindex = (0, utilities_1.random)(0, terms.length - 1);
-        let term = terms[tindex];
-        let multipleArray = (0, utilities_1.multiples)(term);
-        if (multipleArray.length > 1) {
-            let multiple = 0;
-            while (multiple == term || multiple == 0) {
-                multiple = multipleArray[(0, utilities_1.random)(0, multipleArray.length - 1)];
-            }
-            term = `(${term} / ${multiple})`;
-            terms[tindex] = term;
-        }
-        signValue = 40;
-    }
-    for (let i = 0; i < 3; i++) {
-        let randTerm = (0, utilities_1.random)(0, terms.length - 1);
-        if (typeof terms[randTerm] == 'number' || (typeof terms[randTerm] == 'string' && !terms[randTerm].includes('^'))) {
-            let term = typeof terms[randTerm] == 'string' ? eval(terms[randTerm]) : terms[randTerm];
-            if ((0, utilities_1.isSqrt)(term)) {
-                terms[randTerm] = `${terms[randTerm]}^0.5`;
-                signValue = signValue + 30;
-            }
-            else if (term <= 10) {
-                terms[randTerm] = `${terms[randTerm]}^2`;
-                signValue = signValue + 30;
-            }
-        }
-        else {
-            i--;
-        }
-    }
-    let equation = '';
-    for (let i = 0; i < terms.length - 1; i++) {
-        const term = terms[i];
-        let values = getSign(vm);
-        signValue = signValue + values[1];
-        equation = equation + `${term} ${values[0]} `;
-    }
-    equation = equation + terms[terms.length - 1];
-    let value = signValue + tAvg + Math.abs(eval(equation.replace(/\^/g, '**')) * ((0, utilities_1.random)(1, 4) / 10));
-    return [equation, Math.round((value > 300) ? 300 : value)];
-}
-function getSign(vm) {
-    let value = undefined;
-    while (value == undefined) {
-        if (Math.random() < vm["+"]) {
-            value = ['+', valueMap["+"]];
-        }
-        else if (Math.random() < vm["-"]) {
-            value = ['-', valueMap["-"]];
-        }
-        else if (Math.random() < vm["*"]) {
-            value = ['*', valueMap["*"]];
-        }
-    }
-    return value;
+    return scrambledWord;
 }
 class mathGame {
     constructor(client, channel) {
@@ -127,54 +57,53 @@ class mathGame {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            let difficulty = (0, utilities_1.random)(1, 3);
+            let difficulty = (0, utilities_1.random)(1, 4);
             let equation = ['error: type 0 to answer correctly', 0];
             let color = "Green";
             switch (difficulty) {
                 case 1:
                     {
-                        equation = generateEquation(easyVM);
+                        equation = (0, utilities_1.generateEquation)(utilities_1.maps.easy);
                     }
                     break;
                 case 2:
                     {
-                        equation = generateEquation(medVM);
+                        equation = (0, utilities_1.generateEquation)(utilities_1.maps.medium);
                         color = "Yellow";
                     }
                     break;
                 case 3:
                     {
-                        if ((0, utilities_1.random)(3, 6) == 5) {
-                            equation = generateEquation(impossibleVM);
-                            equation[1] = 1500;
-                            color = "DarkRed";
-                        }
-                        else {
-                            equation = generateEquation(hardVM);
-                            color = "Red";
-                        }
+                        equation = (0, utilities_1.generateEquation)(utilities_1.maps.hard);
+                        color = "Red";
                     }
                     break;
                 default:
+                    {
+                        equation = (0, utilities_1.algGen)();
+                        color = "LuminousVividPink";
+                    }
                     break;
             }
             let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + equation[1] + "xp" }).setColor(color);
-            let reward = equation[1];
-            let answer = eval(equation[0].replace(/\^/g, '**'));
+            let answer = equation[1];
             if (this.channel instanceof discord_js_1.TextChannel) {
                 let message = yield this.channel.send({ embeds: [embed] });
                 this.collector = this.channel.createMessageCollector({ time: 3600000 });
                 this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
-                    console.log();
-                    if (msg.content.replace(/\D/g, "") == answer) {
+                    var _a;
+                    if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
+                        let reward = Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05)) > 300 ? 300 : Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05));
+                        let gemReward = (0, utilities_1.random)(1, Math.ceil(reward / 100));
                         let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id));
-                        user.addXP(reward);
+                        user.addXP(reward, this.channel.id);
                         user.addWallet(10);
+                        user.userManager.addGems(gemReward);
                         embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
-                            .setTitle(`${msg.author.displayName} solved the problem.`)
-                            .setFooter({ text: "Solved for " + equation[1] + "xp" });
+                            .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} solved the problem.`)
+                            .setFooter({ text: "Solved for " + ((Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05)) > 300) ? 300 : Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05))) + " xp" });
                         message.edit({ embeds: [embed] });
-                        let rewardMsg = yield msg.channel.send(`<@${msg.author.id}> solved the problem.`);
+                        let rewardMsg = yield msg.channel.send(data_1.MessageManager.getMessage('rewards.generic', [msg.author.id, reward, 10, gemReward]));
                         setTimeout(() => {
                             if (msg.deletable)
                                 msg.delete();
@@ -232,25 +161,30 @@ class triviaGame {
                 let triviaMessage = yield this.channel.send({ embeds: [embed], components: [row] });
                 let answerers = [];
                 let CorrectAnswerers = [];
-                let strings = ["1st. ", "2nd. ", "3rd. "];
+                console.log(trivia.correctAnswer);
                 this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: triviaMessage }).on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
+                    var _a, _b;
+                    interaction.deferUpdate();
                     let member = interaction.member;
                     if (interaction.customId == "trivia" && interaction instanceof discord_js_1.StringSelectMenuInteraction && !answerers.includes(interaction.user.id) && member instanceof discord_js_1.GuildMember) {
                         answerers.push(interaction.user.id);
-                        CorrectAnswerers.push(interaction.user.id);
-                        let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
                         if (interaction.values[0] == answerIndex.toString()) {
-                            user.addXP((trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length);
+                            CorrectAnswerers.push(interaction.user.id);
+                            let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
+                            let reward = (trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length;
+                            let gemReward = (0, utilities_1.random)(1, Math.ceil(reward / 100));
+                            user.addXP(reward, this.channel.id);
                             user.addWallet(10);
-                            embed.addFields([{ name: strings[answerers.length - 1] ? strings[answerers.length - 1] : `${CorrectAnswerers.length}th. `, value: member.displayName, inline: true }]);
+                            user.userManager.addGems((0, utilities_1.random)(1, Math.ceil(reward / 100)));
+                            embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: member.displayName, inline: true }]);
                             triviaMessage.edit({ embeds: [embed], components: [row] });
-                            let message = yield interaction.reply(`<@${interaction.user.id}> answered correctly.`);
+                            let message = yield ((_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send(data_1.MessageManager.getMessage('rewards.generic', [interaction.user.id, reward, 10, gemReward])));
                             setTimeout(() => {
                                 message === null || message === void 0 ? void 0 : message.delete();
                             }, 20000);
                         }
                         else {
-                            let message = yield interaction.reply(`<@${interaction.user.id}> answered incorrectly.`);
+                            let message = yield ((_b = interaction.channel) === null || _b === void 0 ? void 0 : _b.send(data_1.MessageManager.getMessage('rewards.trivia.incorrect', [interaction.user.id, trivia.correctAnswer])));
                             setTimeout(() => {
                                 message === null || message === void 0 ? void 0 : message.delete();
                             }, 20000);
@@ -266,6 +200,8 @@ class triviaGame {
         });
     }
     end() {
+        if (this.collector)
+            this.collector.stop();
     }
 }
 class scrambleGame {
@@ -301,19 +237,25 @@ class scrambleGame {
             catch (error) {
                 return;
             }
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Unscramble The Word").setDescription(word).setTimestamp().setColor(difficulty == 1 ? "Green" : difficulty == 2 ? "Yellow" : "Red");
+            let scrambledWord = word;
+            while (word == scrambledWord) {
+                scrambledWord = wordScramble(word);
+            }
+            let embed = new discord_js_1.EmbedBuilder().setTitle("Unscramble The Word").setDescription(scrambledWord).setTimestamp().setColor(difficulty == 1 ? "Green" : difficulty == 2 ? "Yellow" : "Red");
             const value = Math.round(100 * ((length - 3) ** 0.75));
             embed.setFooter({ text: "Unscramble for " + value + "xp" });
             let message = yield this.channel.send({ embeds: [embed] });
             let solved = false;
             this.collector = this.channel.createMessageCollector({ time: 3600000 });
             this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
+                var _a;
                 if (msg.content.toLowerCase() == word.toLowerCase()) {
                     let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id));
-                    user.addXP(value);
+                    user.addXP(value, this.channel.id);
                     user.addWallet(10);
+                    user.userManager.addGems((0, utilities_1.random)(1, Math.ceil(value / 100)));
                     embed.setFields([{ name: "Answer", value: word, inline: true }])
-                        .setTitle(`${msg.author.displayName} unscrambled the word.`)
+                        .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} unscrambled the word.`)
                         .setFooter({ text: "Unscrambled for " + value + "xp" })
                         .setColor("NotQuiteBlack");
                     message.edit({ embeds: [embed] });
@@ -351,7 +293,7 @@ class games {
     init() {
         if (this.game)
             this.game.end();
-        let randomNum = (0, utilities_1.random)(1, 3);
+        let randomNum = 1; //random(1, 1)
         let channel = this.client.channels.cache.get(this.channel);
         if (channel instanceof discord_js_1.TextChannel) {
             switch (randomNum) {
@@ -386,36 +328,58 @@ class blackjackThread {
         this.channel = channel;
         this.player = player;
     }
-    createThread() {
+    init() {
+        let embed = new discord_js_1.EmbedBuilder().setTitle("Welcome to Blackjack").setDescription("React with 🃏 to start the game.").setTimestamp().setColor("Green");
+        this.channel.threads.create({ name: this.player.id, autoArchiveDuration: 1440, reason: "Blackjack", message: { content: "Welcome to Blackjack", embeds: [embed] } });
     }
 }
+exports.blackjackThread = blackjackThread;
 class dailyQB {
-    constructor() {
+    constructor(client, channel) {
         this.message = '';
         this.channel = '';
         this.prompt = [];
         this.answer = '';
         this.open = true;
         this.startTime = Date.now();
+        this.client = client;
+        this.channel = channel;
+        this.init();
     }
-    static init(channel) {
+    init() {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('qb');
             try {
-                let qb = new dailyQB();
                 const response = yield axios_1.default.get('https://qbreader.org/api/random-tossup/');
                 let data = response.data;
                 let prompt = response.data.tossups[0].question.split(".");
                 if (prompt[prompt.length - 1] == "") {
                     prompt.splice(prompt.length - 1, 1);
                 }
-                qb.channel = channel;
-                qb.prompt = prompt;
-                qb.answer = data.tossups[0].formatted_answer;
-                return qb;
+                this.prompt = prompt;
+                this.answer = data.tossups[0].formatted_answer;
             }
             catch (error) {
-                return new dailyQB();
+                console.log("error");
             }
+            let channel = this.client.channels.cache.get(this.channel);
+            let string = this.prompt[0];
+            let i = 0;
+            let embed = new discord_js_1.EmbedBuilder().setTitle("Daily Quiz Bowl").setDescription(this.prompt[0]).setTimestamp().setColor("LuminousVividPink");
+            if (!(channel instanceof discord_js_1.TextChannel))
+                return;
+            this.message = (yield channel.send({ embeds: [embed] })).id;
+            new RunTimeEvents_1.RunTimeEvents().on('hour', (current) => {
+                if ((0, utilities_1.isOdd)(current) && channel instanceof discord_js_1.TextChannel) {
+                    let textMessage = channel.messages.cache.get(this.message);
+                    if (textMessage) {
+                        i++;
+                        string += this.prompt[i];
+                        embed.setDescription(string);
+                        textMessage.edit({ embeds: [embed] });
+                    }
+                }
+            });
         });
     }
     checkanswer(answer) {
