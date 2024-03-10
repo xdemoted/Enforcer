@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node build/main.js",
-    "cleanExport": "cp -r ./build ./zip && rm -rf ./zip/build/assets && cp ./package.json ./zip && cp ./token.json ./zip && zip -r build.zip ./zip",
-    "fullExport": "cp -r ./build ./zip && cp ./package.json ./zip && cp ./token.json ./zip && zip -r build.zip ./zip"
+    "cleanExport": "zip -r build.zip ./build && zip -d build.zip /build/assets && zip -ur build.zip ./package.json",
+    "fullExport": "zip -r build.zip ./build && zip -ur build.zip ./package.json"
   },
   "author": "",
   "license": "ISC",
