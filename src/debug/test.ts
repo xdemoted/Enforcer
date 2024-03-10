@@ -123,7 +123,7 @@ async function testCanvas() {
     let gradient
     let ctx = canvas.getContext('2d');
     const offset = ((25 ** 2) / 2) ** 0.5
-    let utilCTX = new ContextUtilities(ctx);
+    let utilCTX = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D);
     const color = ['#505050', '#646464', '#505050']
     // Left Boundary
     utilCTX.setGradient(50, 0, 0, 0, color)
@@ -194,7 +194,7 @@ async function testCanvas() {
 async function testCard() {
     let canvas = new Canvas(1000, 1400)
     let ctx = canvas.getContext('2d');
-    let util = new ContextUtilities(ctx)
+    let util = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
     let star = await loadImage('./assets/images/star.png')
     let baseCard = await loadImage('./assets/images/tradecards/threestar.png')
     ctx.drawImage(baseCard, 0, 0, 1000, 1400)

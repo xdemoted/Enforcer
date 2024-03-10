@@ -14,12 +14,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
 const canvas_1 = require("canvas");
+const path_1 = __importDefault(require("path"));
 const discord_js_1 = require("discord.js");
 const events_1 = __importDefault(require("events"));
 var quantize = require('quantize');
 const startChance = 0.01;
 exports.maps = {
-    easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 2).set('termLimit', 1),
+    easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 1).set('termLimit', 1),
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
     hard: new Map().set('recompose', 0.1).set('factorize', 0.2).set('divide', 0.2).set('exponentiate', 0.3).set('root', 0.3).set('maxDivision', 15).set('termIntCap', 50).set('maxDepth', 4).set('termLimit', 1)
 };
@@ -204,7 +205,7 @@ function seperateNumber(number, map, limit, depth) {
             string = `(${newStack(modifier * number, map, limit, depth + 1)} / ${newStack(modifier, map, limit, depth + 1)})`;
         }
         else if (Math.random() < defaulter(map.get('recompose'), 0.1)) {
-            const modifier = random(1, 100);
+            const modifier = random(1, defaulter(map.get('termIntCap'), 20));
             const operation = random(1, 2);
             string = `(${newStack((operation == 1) ? number + modifier : number - modifier, map, limit, depth + 1)} ${operation == 1 ? '-' : '+'} ${newStack(modifier, map, limit, depth + 1)})`;
         }
@@ -215,9 +216,9 @@ function seperateNumber(number, map, limit, depth) {
 function generateEquation(map) {
     if (map == undefined)
         map = new Map();
-    let startNum = random(1, defaulter(map.get('termIntCap'), 100));
+    let startNum = random(1, defaulter(map.get('termIntCap'), 20));
     let string = `${seperateNumber(startNum, map, defaulter(map.get('maxDepth'), 5))}`;
-    const terms = random(3, defaulter(map.get('termLimit'), 5));
+    const terms = random(1, defaulter(map.get('termLimit'), 5));
     let finalSolution = startNum;
     for (let i = 0; i < terms; i++) {
         let term = random(1, 50);
@@ -233,71 +234,72 @@ function generateEquation(map) {
     return [string, finalSolution];
 }
 exports.generateEquation = generateEquation;
-function createBackgroundImage(url) {
+function createBackgroundImage(url, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
-        let canvas = new canvas_1.Canvas(1200, 300);
+        let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
-        ctx.fillRect(325, 200, 700, 50);
+        ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution);
         ctx.beginPath();
-        ctx.arc(150, 150, 150, 0, Math.PI * 2);
+        ctx.arc(150 * resolution, 150 * resolution, 150 * resolution, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalCompositeOperation = 'source-out';
         ctx.beginPath();
-        ctx.moveTo(150, 0);
-        ctx.lineTo(1050, 0);
-        ctx.arc(1050, 150, 150, -Math.PI / 2, Math.PI / 2);
-        ctx.lineTo(150, 300);
+        ctx.moveTo(150 * resolution, 0);
+        ctx.lineTo(1050 * resolution, 0);
+        ctx.arc(1050 * resolution, 150 * resolution, 150 * resolution, -Math.PI / 2, Math.PI / 2);
+        ctx.lineTo(150 * resolution, 300 * resolution);
         ctx.fill();
         ctx.globalCompositeOperation = 'source-in';
         let image = yield (0, canvas_1.loadImage)(url);
-        let height = Math.round((image.height / image.width) * 1200);
+        let height = Math.round((image.height / image.width) * (1200 * resolution));
         console.log(height);
-        ctx.drawImage(yield (0, canvas_1.loadImage)(url), 0, -(height - 300) / 2, 1200, height);
+        ctx.drawImage(yield (0, canvas_1.loadImage)(url), 0, -(height - (300 * resolution)) / 2, 1200 * resolution, height);
         return canvas;
     });
 }
-function createTemplate(url) {
+function createTemplate(url, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
-        let canvas = new canvas_1.Canvas(1200, 300);
+        let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         let palette = yield getPalette(url);
-        let gradient = ctx.createLinearGradient(0, 0, 1200, 0);
+        let gradient = ctx.createLinearGradient(0, 0, 1200 * resolution, 0);
         gradient.addColorStop(0, palette[0]);
         gradient.addColorStop(1, palette[1]);
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = 20;
+        ctx.lineWidth = 20 * resolution;
         let offset = ctx.lineWidth / 2;
         ctx.beginPath();
-        ctx.moveTo(150, 0 + offset);
-        ctx.lineTo(1050, 0 + offset);
-        ctx.arc(1050, 150, 150 - offset, -Math.PI / 2, Math.PI / 2);
-        ctx.lineTo(150, 300 - offset);
-        ctx.arc(150, 150, 150 - offset, Math.PI / 2, Math.PI * 5 / 2);
+        ctx.moveTo(150 * resolution, 0 + offset);
+        ctx.lineTo(1050 * resolution, 0 + offset);
+        ctx.arc(1050 * resolution, 150 * resolution, 150 * resolution - offset, -Math.PI / 2, Math.PI / 2);
+        ctx.lineTo(150 * resolution, 300 * resolution - offset);
+        ctx.arc(150 * resolution, 150 * resolution, 150 * resolution - offset, Math.PI / 2, Math.PI * 5 / 2);
         ctx.stroke();
-        ctx.lineWidth = 10;
+        ctx.lineWidth = 10 * resolution;
         offset = ctx.lineWidth / 2;
         ctx.beginPath();
-        ctx.moveTo(350, 200 - offset);
-        ctx.lineTo(1000, 200 - offset);
-        ctx.arc(1000, 225, 25 + offset, -Math.PI / 2, Math.PI / 2);
-        ctx.lineTo(350, 250 + offset);
-        ctx.arc(350, 225, 25 + offset, Math.PI / 2, -Math.PI / 2);
+        ctx.moveTo(350 * resolution, 200 * resolution - offset);
+        ctx.lineTo(1000 * resolution, 200 * resolution - offset);
+        ctx.arc(1000 * resolution, 225 * resolution, 25 * resolution + offset, -Math.PI / 2, Math.PI / 2);
+        ctx.lineTo(350 * resolution, 250 * resolution + offset);
+        ctx.arc(350 * resolution, 225 * resolution, 25 * resolution + offset, Math.PI / 2, -Math.PI / 2);
         ctx.stroke();
         return canvas;
     });
 }
-function createNameCard(url) {
+function createNameCard(url, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield (0, canvas_1.loadImage)(url);
-        }
-        catch (error) {
-            url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&";
-        }
+        //try {
+        //    await loadImage(url)
+        //} catch (error) {
+        //    url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&"
+        //}
+        const dataPath = path_1.default.join(__dirname, '../assets/images/namecards/namecard.png');
+        url = "../assets/images/namecards/namecard.png";
         let canvas = new canvas_1.Canvas(1200, 300);
         let ctx = canvas.getContext('2d');
-        ctx.drawImage(yield createBackgroundImage(url), 0, 0, 1200, 300);
-        ctx.drawImage(yield createTemplate(url), 0, 0, 1200, 300);
+        ctx.drawImage(yield createBackgroundImage(dataPath, resolution), 0, 0, 1200, 300);
+        ctx.drawImage(yield createTemplate(dataPath, resolution), 0, 0, 1200, 300);
         return canvas;
     });
 }

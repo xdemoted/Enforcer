@@ -24,7 +24,7 @@ class mathGame {
         this.client = client;
     }
     async init() {
-        let difficulty = random(1, 4)
+        let difficulty = 3//random(1, 3)
         let equation: [string, number] = ['error: type 0 to answer correctly', 0]
         let color: ColorResolvable = "Green"
         switch (difficulty) {
@@ -39,21 +39,16 @@ class mathGame {
                 equation = generateEquation(maps.hard)
                 color = "Red"
             } break;
-            default: {
-                equation = algGen()
-                color = "LuminousVividPink"
-            }
-                break;
         }
-        let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + equation[1] + "xp" }).setColor(color)
+        let reward = difficulty == 1 ? 100 : difficulty == 2 ? 200 : 300
+        let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + reward + "xp" }).setColor(color)
         let answer = equation[1]
         if (this.channel instanceof TextChannel) {
             let message = await this.channel.send({ embeds: [embed] })
             this.collector = this.channel.createMessageCollector({ time: 3600000 })
             this.collector.on('collect', async msg => {
                 if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
-                    let reward = Math.round(answer * (1 - random(1, 4) * 0.05)) > 300 ? 300 : Math.round(answer * (1 - random(1, 4) * 0.05))
-                    let gemReward = random(1, Math.ceil(reward / 100))
+                    let gemReward = random(1, 5)
                     let user = new GuildMemberManager(data.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id))
 
                     user.addXP(reward, this.channel.id)
@@ -62,7 +57,7 @@ class mathGame {
 
                     embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
                         .setTitle(`${msg.member?.displayName} solved the problem.`)
-                        .setFooter({ text: "Solved for " + ((Math.round(answer * (1 - random(1, 4) * 0.05)) > 300) ? 300 : Math.round(answer * (1 - random(1, 4) * 0.05))) + " xp" })
+                        .setFooter({ text: "Solved for " + reward + " xp" })
                     message.edit({ embeds: [embed] })
                     let rewardMsg = await msg.channel.send(MessageManager.getMessage('rewards.generic', [msg.author.id, reward, 10, gemReward]))
                     setTimeout(() => {
@@ -243,7 +238,7 @@ export class games {
     }
     init() {
         if (this.game) this.game.end()
-        let randomNum = random(1, 4)
+        let randomNum = 1//random(1, 4)
         let channel = this.client.channels.cache.get(this.channel)
         if (channel instanceof TextChannel) {
             switch (randomNum) {
@@ -383,7 +378,7 @@ export class dailyQB {
         let channel = this.client.channels.cache.get(this.channel)
         let string = this.prompt[0]
         let i = 0
-        let embed = new EmbedBuilder().setTitle("Daily Quiz Bowl").setDescription(this.prompt[0]).setTimestamp().setColor("LuminousVividPink")
+        let embed = new EmbedBuilder().setTitle("Daily Quiz Bowl").setDescription(this.prompt[0]).setTimestamp().setColor("LuminousVividPink").setFooter({text:'Answer with /answer <answer>'})
         if (!(channel instanceof TextChannel)) return;
         let message = (await channel.send({ embeds: [embed] }))
         this.message = message.id
@@ -394,7 +389,7 @@ export class dailyQB {
                 if (textMessage) {
                     i++
                     if (typeof this.prompt[i] == 'string') {
-                        string += this.prompt[i]
+                        string += this.prompt[i]+"."
                         embed.setDescription(string)
                         textMessage.edit({ embeds: [embed] })
                     }

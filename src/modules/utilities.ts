@@ -1,11 +1,12 @@
 import { Canvas, loadImage } from "canvas";
+import path from 'path'
 import { ActionRow, ActionRowBuilder, AnyComponentBuilder, ComponentType, EmbedBuilder, Message, MessageActionRowComponent, MessageActionRowComponentBuilder, StringSelectMenuBuilder, StringSelectMenuComponent, StringSelectMenuInteraction, TextChannel } from "discord.js";
 import { RgbPixel } from "quantize";
 import EventEmitter from 'events';
 var quantize = require('quantize');
 const startChance = 0.01
 export let maps = {
-    easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 2).set('termLimit', 1),
+    easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 1).set('termLimit', 1),
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
     hard: new Map().set('recompose', 0.1).set('factorize', 0.2).set('divide', 0.2).set('exponentiate', 0.3).set('root', 0.3).set('maxDivision', 15).set('termIntCap', 50).set('maxDepth', 4).set('termLimit', 1)
 };
@@ -177,7 +178,7 @@ function seperateNumber(number: number, map: Map<string, number>, limit?: number
             const modifier = random(1, 3)
             string = `(${newStack(modifier * number, map, limit, depth + 1)} / ${newStack(modifier, map, limit, depth + 1)})`;
         } else if (Math.random() < defaulter(map.get('recompose'), 0.1)) {
-            const modifier = random(1, 100);
+            const modifier = random(1, defaulter(map.get('termIntCap'), 20));
             const operation = random(1, 2);
             string = `(${newStack((operation == 1) ? number + modifier : number - modifier, map, limit, depth + 1)} ${operation == 1 ? '-' : '+'} ${newStack(modifier, map, limit, depth + 1)})`;
         }
@@ -187,9 +188,9 @@ function seperateNumber(number: number, map: Map<string, number>, limit?: number
 }
 export function generateEquation(map?: Map<string, number>): [string, number] {
     if (map == undefined) map = new Map()
-    let startNum = random(1, defaulter(map.get('termIntCap'), 100));
+    let startNum = random(1, defaulter(map.get('termIntCap'), 20));
     let string = `${seperateNumber(startNum, map, defaulter(map.get('maxDepth'), 5))}`;
-    const terms = random(3, defaulter(map.get('termLimit'), 5));
+    const terms = random(1, defaulter(map.get('termLimit'), 5));
     let finalSolution = startNum;
     for (let i = 0; i < terms; i++) {
         let term = random(1, 50);
@@ -203,65 +204,67 @@ export function generateEquation(map?: Map<string, number>): [string, number] {
     }
     return [string, finalSolution];
 }
-async function createBackgroundImage(url: string) {
-    let canvas = new Canvas(1200, 300);
+async function createBackgroundImage(url: string, resolution = 1) {
+    let canvas = new Canvas(1200 * resolution, 300 * resolution);
     let ctx = canvas.getContext('2d');
-    ctx.fillRect(325, 200, 700, 50)
+    ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution)
     ctx.beginPath();
-    ctx.arc(150, 150, 150, 0, Math.PI * 2);
+    ctx.arc(150 * resolution, 150 * resolution, 150 * resolution, 0, Math.PI * 2);
     ctx.fill()
     ctx.globalCompositeOperation = 'source-out'
     ctx.beginPath();
-    ctx.moveTo(150, 0);
-    ctx.lineTo(1050, 0);
-    ctx.arc(1050, 150, 150, -Math.PI / 2, Math.PI / 2);
-    ctx.lineTo(150, 300);
+    ctx.moveTo(150 * resolution, 0);
+    ctx.lineTo(1050 * resolution, 0);
+    ctx.arc(1050 * resolution, 150 * resolution, 150 * resolution, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(150 * resolution, 300 * resolution);
     ctx.fill()
     ctx.globalCompositeOperation = 'source-in'
     let image = await loadImage(url);
-    let height = Math.round((image.height / image.width) * 1200)
+    let height = Math.round((image.height / image.width) * (1200 * resolution))
     console.log(height)
-    ctx.drawImage(await loadImage(url), 0, -(height - 300) / 2, 1200, height)
+    ctx.drawImage(await loadImage(url), 0, -(height - (300 * resolution)) / 2, 1200 * resolution, height)
     return canvas;
 }
-async function createTemplate(url: string) {
-    let canvas = new Canvas(1200, 300);
+async function createTemplate(url: string, resolution = 1) {
+    let canvas = new Canvas(1200 * resolution, 300 * resolution);
     let ctx = canvas.getContext('2d');
     let palette = await getPalette(url);
-    let gradient = ctx.createLinearGradient(0, 0, 1200, 0);
+    let gradient = ctx.createLinearGradient(0, 0, 1200 * resolution, 0);
     gradient.addColorStop(0, palette[0]);
     gradient.addColorStop(1, palette[1]);
     ctx.strokeStyle = gradient;
-    ctx.lineWidth = 20;
+    ctx.lineWidth = 20 * resolution;
     let offset = ctx.lineWidth / 2;
     ctx.beginPath();
-    ctx.moveTo(150, 0 + offset);
-    ctx.lineTo(1050, 0 + offset);
-    ctx.arc(1050, 150, 150 - offset, -Math.PI / 2, Math.PI / 2);
-    ctx.lineTo(150, 300 - offset);
-    ctx.arc(150, 150, 150 - offset, Math.PI / 2, Math.PI * 5 / 2);
+    ctx.moveTo(150 * resolution, 0 + offset);
+    ctx.lineTo(1050 * resolution, 0 + offset);
+    ctx.arc(1050 * resolution, 150 * resolution, 150 * resolution - offset, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(150 * resolution, 300 * resolution - offset);
+    ctx.arc(150 * resolution, 150 * resolution, 150 * resolution - offset, Math.PI / 2, Math.PI * 5 / 2);
     ctx.stroke();
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 10 * resolution;
     offset = ctx.lineWidth / 2;
     ctx.beginPath();
-    ctx.moveTo(350, 200 - offset);
-    ctx.lineTo(1000, 200 - offset);
-    ctx.arc(1000, 225, 25 + offset, -Math.PI / 2, Math.PI / 2);
-    ctx.lineTo(350, 250 + offset);
-    ctx.arc(350, 225, 25 + offset, Math.PI / 2, -Math.PI / 2);
+    ctx.moveTo(350 * resolution, 200 * resolution - offset);
+    ctx.lineTo(1000 * resolution, 200 * resolution - offset);
+    ctx.arc(1000 * resolution, 225 * resolution, 25 * resolution + offset, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(350 * resolution, 250 * resolution + offset);
+    ctx.arc(350 * resolution, 225 * resolution, 25 * resolution + offset, Math.PI / 2, -Math.PI / 2);
     ctx.stroke();
     return canvas;
 }
-export async function createNameCard(url: string) {
-    try {
-        await loadImage(url)
-    } catch (error) {
-        url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&"
-    }
+export async function createNameCard(url: string,resolution = 1) {
+    //try {
+    //    await loadImage(url)
+    //} catch (error) {
+    //    url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&"
+    //}
+    const dataPath = path.join(__dirname, '../assets/images/namecards/namecard.png')
+    url = "../assets/images/namecards/namecard.png"
     let canvas = new Canvas(1200, 300);
     let ctx = canvas.getContext('2d');
-    ctx.drawImage(await createBackgroundImage(url), 0, 0, 1200, 300)
-    ctx.drawImage(await createTemplate(url), 0, 0, 1200, 300)
+    ctx.drawImage(await createBackgroundImage(dataPath,resolution), 0, 0, 1200, 300)
+    ctx.drawImage(await createTemplate(dataPath,resolution), 0, 0, 1200, 300)
     return canvas;
 }
 function toRad(degrees: number): number {
@@ -410,8 +413,8 @@ interface GradientOptions {
 
 }
 export class ContextUtilities {
-    context: import("/workspaces/Enforcer/node_modules/canvas/types/index").CanvasRenderingContext2D
-    constructor(context: import("/workspaces/Enforcer/node_modules/canvas/types/index").CanvasRenderingContext2D) {
+    context: CanvasRenderingContext2D
+    constructor(context: CanvasRenderingContext2D) {
         this.context = context
     }
     setGradient(x1: number, y1: number, x2: number, y2: number, colors: string[]) {
@@ -422,7 +425,7 @@ export class ContextUtilities {
         this.context.fillStyle = gradient
         return this
     }
-    roundedRect(x: number, y: number, width: number, height: number, radius: number, ctx: import("/workspaces/Enforcer/node_modules/canvas/types/index").CanvasRenderingContext2D = this.context) {
+    roundedRect(x: number, y: number, width: number, height: number, radius: number, ctx: CanvasRenderingContext2D = this.context) {
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
         ctx.arcTo(x + width, y, x + width, y + height, radius);
@@ -432,11 +435,11 @@ export class ContextUtilities {
         this.context.closePath();
         return this;
     }
-    roundedBorder(x: number, y: number, width: number, height: number, radius: number, lineWidth: number, ctx: import("/workspaces/Enforcer/node_modules/canvas/types/index").CanvasRenderingContext2D = this.context) {
+    roundedBorder(x: number, y: number, width: number, height: number, radius: number, lineWidth: number, ctx: CanvasRenderingContext2D = this.context) {
         this.roundedRect(x + lineWidth / 2, y + lineWidth / 2, width - lineWidth, height - lineWidth, radius, ctx);
         return this;
     }
-    borderOutline(x: number, y: number, width: number, height: number, radius: number, lineWidth: number, ctx: import("/workspaces/Enforcer/node_modules/canvas/types/index").CanvasRenderingContext2D = this.context) {
+    borderOutline(x: number, y: number, width: number, height: number, radius: number, lineWidth: number, ctx: CanvasRenderingContext2D = this.context) {
         const initWidth = this.context.lineWidth
         ctx.lineWidth = lineWidth;
         this.roundedBorder(x, y, width, height, radius, lineWidth);

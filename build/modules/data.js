@@ -86,6 +86,39 @@ class DataManager {
         this.cacheData.users.push(newUser);
         return newUser;
     }
+    checkData() {
+        let data = this.cacheData;
+        if (data.guilds == undefined) {
+            data.guilds = [];
+        }
+        if (data.users == undefined) {
+            data.users = [];
+        }
+        else {
+            data.users.forEach(user => {
+                user = Object.assign(new GlobalUser(user.id), user);
+            });
+        }
+        data.guilds.forEach(guild => {
+            if (guild.members == undefined) {
+                guild.members = [];
+            }
+            else {
+                guild.members.forEach(member => {
+                    member = Object.assign(new GuildMember(member.id, guild.id), member);
+                });
+            }
+            if (guild.settings == undefined) {
+                guild.settings = new GuildSettings();
+            }
+            else {
+                guild.settings = Object.assign(new GuildSettings(), guild.settings);
+            }
+            if (guild.xp == undefined) {
+                guild.xp = 0;
+            }
+        });
+    }
 }
 exports.DataManager = DataManager;
 class MessageManager {
@@ -221,6 +254,9 @@ class GlobalUser extends BaseUser {
         super(id);
         this.namecard = '';
         this.gems = 0;
+        this.inventory = {
+            cards: []
+        };
     }
 }
 exports.GlobalUser = GlobalUser;

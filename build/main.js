@@ -88,17 +88,17 @@ function getWelcomeBanner(imagelink) {
         return canvas.toBuffer('image/png');
     });
 }
-function getLeaderCard(users) {
+function getLeaderCard(users, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
-        let canvas = canvas_1.default.createCanvas(2450, 1925);
+        let canvas = canvas_1.default.createCanvas(2450 * resolution, 1925 * resolution);
         let context = canvas.getContext('2d');
         for (let i = 0; i < users.length; i++) {
-            context.drawImage(yield getNamecard(users[i], i + 1), Math.floor(i / 6) * 1250, (i % 6) * 325, 1200, 300);
+            context.drawImage(yield getNamecard(users[i], i + 1, resolution), Math.floor(i / 6) * 1250 * resolution, (i % 6) * 325 * resolution, 1200 * resolution, 300 * resolution);
         }
         return canvas;
     });
 }
-function getNamecard(gUser, rank) {
+function getNamecard(gUser, rank, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
         let user;
         let gUser2;
@@ -115,38 +115,38 @@ function getNamecard(gUser, rank) {
         const lastRequirement = (userLevel > 1) ? data_1.DataManager.getLevelRequirement(userLevel - 1) : 0;
         const requirement = data_1.DataManager.getLevelRequirement(userLevel);
         let hexColor = (gUser instanceof discord_js_1.GuildMember && gUser.displayHexColor != '#000000') ? gUser.displayHexColor : '#00EDFF';
-        let canvas = canvas_1.default.createCanvas(1200, 300);
+        let canvas = canvas_1.default.createCanvas(1200 * resolution, 300 * resolution);
         let context = canvas.getContext('2d');
         context.fillStyle = hexColor;
-        context.drawImage(yield (0, canvas_1.loadImage)((yield (0, utilities_1.createNameCard)(gUser2.namecard)).toBuffer()), 0, 0, 1200, 300);
+        context.drawImage(yield (0, canvas_1.loadImage)((yield (0, utilities_1.createNameCard)(gUser2.namecard)).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
         context.globalCompositeOperation = 'destination-over';
         // Avatar PFP
-        let avatarCanvas = canvas_1.default.createCanvas(260, 260);
+        let avatarCanvas = canvas_1.default.createCanvas(260 * resolution, 260 * resolution);
         let avatarContext = avatarCanvas.getContext('2d');
-        avatarContext.arc(130, 130, 130, 0, Math.PI * 2, true);
+        avatarContext.arc(130 * resolution, 130 * resolution, 130 * resolution, 0, Math.PI * 2, true);
         avatarContext.fill();
         avatarContext.globalCompositeOperation = 'source-in';
-        avatarContext.drawImage(yield canvas_1.default.loadImage(avatarURL ? avatarURL + "?size=1024" : './build/assets/images/namecards/namecard.png'), 0, 0, 260, 260);
-        context.drawImage(yield canvas_1.default.loadImage(avatarCanvas.toBuffer()), 20, 20, 260, 260);
+        avatarContext.drawImage(yield canvas_1.default.loadImage(avatarURL ? avatarURL + "?size=1024" : './build/assets/images/namecards/namecard.png'), 0, 0, 260 * resolution, 260 * resolution);
+        context.drawImage(yield canvas_1.default.loadImage(avatarCanvas.toBuffer()), 20 * resolution, 20 * resolution, 260 * resolution, 260 * resolution);
         // Background
-        let percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700);
-        context.fillRect(325, 200, percent, 50);
+        let percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700 * resolution);
+        context.fillRect(325 * resolution, 200 * resolution, percent, 50 * resolution);
         context.globalCompositeOperation = 'source-over';
-        context.font = '40px Segmento';
-        context.fillText(gUser.displayName, 325, 180);
+        context.font = `${40 * resolution}px Segmento`;
+        context.fillText(gUser.displayName, 325 * resolution, 180 * resolution);
         context.fillStyle = '#ffffff';
-        context.fillText(`Rank #${rank ? rank : user.getRank()}`, 325, 60);
+        context.fillText(`Rank #${rank ? rank : user.getRank()}`, 325 * resolution, 60 * resolution);
         context.fillStyle = hexColor;
-        context.font = '30px Segmento';
+        context.font = `${30 * resolution}px Segmento`;
         let wid = context.measureText(`Level`).width;
-        context.font = '40px Segmento';
+        context.font = `${40 * resolution}px Segmento`;
         let wid2 = context.measureText(user.getLevel().toString()).width;
-        context.fillText(user.getLevel().toString(), 1100 - (wid2), 75);
-        context.font = '30px Segmento';
-        context.fillText(`Level`, 1100 - (wid2 + wid), 75);
+        context.fillText(user.getLevel().toString(), (1100 - (wid2)) * resolution, 75 * resolution);
+        context.font = `${30 * resolution}px Segmento`;
+        context.fillText(`Level`, (1100 - (wid2 + wid)) * resolution, 75 * resolution);
         wid = context.measureText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`).width;
         context.fillStyle = '#ffffff';
-        context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, 1025 - wid, 180);
+        context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
         return canvas;
     });
 }

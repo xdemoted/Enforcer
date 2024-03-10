@@ -57,7 +57,7 @@ class mathGame {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            let difficulty = (0, utilities_1.random)(1, 4);
+            let difficulty = 3; //random(1, 3)
             let equation = ['error: type 0 to answer correctly', 0];
             let color = "Green";
             switch (difficulty) {
@@ -78,14 +78,9 @@ class mathGame {
                         color = "Red";
                     }
                     break;
-                default:
-                    {
-                        equation = (0, utilities_1.algGen)();
-                        color = "LuminousVividPink";
-                    }
-                    break;
             }
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + equation[1] + "xp" }).setColor(color);
+            let reward = difficulty == 1 ? 100 : difficulty == 2 ? 200 : 300;
+            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + reward + "xp" }).setColor(color);
             let answer = equation[1];
             if (this.channel instanceof discord_js_1.TextChannel) {
                 let message = yield this.channel.send({ embeds: [embed] });
@@ -93,15 +88,14 @@ class mathGame {
                 this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
                     var _a;
                     if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
-                        let reward = Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05)) > 300 ? 300 : Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05));
-                        let gemReward = (0, utilities_1.random)(1, Math.ceil(reward / 100));
+                        let gemReward = (0, utilities_1.random)(1, 5);
                         let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id));
                         user.addXP(reward, this.channel.id);
                         user.addWallet(10);
                         user.userManager.addGems(gemReward);
                         embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
                             .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} solved the problem.`)
-                            .setFooter({ text: "Solved for " + ((Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05)) > 300) ? 300 : Math.round(answer * (1 - (0, utilities_1.random)(1, 4) * 0.05))) + " xp" });
+                            .setFooter({ text: "Solved for " + reward + " xp" });
                         message.edit({ embeds: [embed] });
                         let rewardMsg = yield msg.channel.send(data_1.MessageManager.getMessage('rewards.generic', [msg.author.id, reward, 10, gemReward]));
                         setTimeout(() => {
@@ -295,7 +289,7 @@ class games {
     init() {
         if (this.game)
             this.game.end();
-        let randomNum = (0, utilities_1.random)(1, 4);
+        let randomNum = 1; //random(1, 4)
         let channel = this.client.channels.cache.get(this.channel);
         if (channel instanceof discord_js_1.TextChannel) {
             switch (randomNum) {
@@ -443,7 +437,7 @@ class dailyQB {
             let channel = this.client.channels.cache.get(this.channel);
             let string = this.prompt[0];
             let i = 0;
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Daily Quiz Bowl").setDescription(this.prompt[0]).setTimestamp().setColor("LuminousVividPink");
+            let embed = new discord_js_1.EmbedBuilder().setTitle("Daily Quiz Bowl").setDescription(this.prompt[0]).setTimestamp().setColor("LuminousVividPink").setFooter({ text: 'Answer with /answer <answer>' });
             if (!(channel instanceof discord_js_1.TextChannel))
                 return;
             let message = (yield channel.send({ embeds: [embed] }));
@@ -455,7 +449,7 @@ class dailyQB {
                     if (textMessage) {
                         i++;
                         if (typeof this.prompt[i] == 'string') {
-                            string += this.prompt[i];
+                            string += this.prompt[i] + ".";
                             embed.setDescription(string);
                             textMessage.edit({ embeds: [embed] });
                         }

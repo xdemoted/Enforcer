@@ -50,59 +50,62 @@ async function getWelcomeBanner(imagelink: string) {
     context.drawImage(await can.loadImage('./welcome.png'), 0, 0, 1200, 300)
     return canvas.toBuffer('image/png')
 }
-async function getLeaderCard(users: (GMember | User)[]) {
-    let canvas = can.createCanvas(2450, 1925)
+async function getLeaderCard(users: (GMember | User)[],resolution=1) {
+    let canvas = can.createCanvas(2450*resolution, 1925*resolution)
     let context = canvas.getContext('2d')
     for (let i = 0; i < users.length; i++) {
-        context.drawImage(await getNamecard(users[i], i + 1), Math.floor(i / 6) * 1250, (i % 6) * 325, 1200, 300)
+        context.drawImage(await getNamecard(users[i], i + 1,resolution), Math.floor(i / 6) * 1250*resolution, (i % 6) * 325*resolution, 1200*resolution, 300*resolution)
     }
     return canvas
 }
-async function getNamecard(gUser: GMember | User, rank?: number) {
-    let user: BaseUserManager
-    let gUser2: GlobalUser
-    if (gUser instanceof User) { user = new UserManager(data.getUser(gUser.id)); gUser2 = data.getUser(gUser.id) } else {
-        user = new GuildMemberManager(data.getGuildManager(gUser.guild.id).getMember(gUser.id))
-        gUser2 = (user as GuildMemberManager).getGlobalUser()
+async function getNamecard(gUser: GMember | User, rank?: number, resolution = 1) {
+    let user: BaseUserManager;
+    let gUser2: GlobalUser;
+    if (gUser instanceof User) {
+        user = new UserManager(data.getUser(gUser.id));
+        gUser2 = data.getUser(gUser.id);
+    } else {
+        user = new GuildMemberManager(data.getGuildManager(gUser.guild.id).getMember(gUser.id));
+        gUser2 = (user as GuildMemberManager).getGlobalUser();
     }
-    let userLevel = user.getLevel()
-    const avatarURL = gUser.displayAvatarURL({ extension: 'png' })
-    const lastRequirement = (userLevel > 1) ? DataManager.getLevelRequirement(userLevel - 1) : 0
-    const requirement = DataManager.getLevelRequirement(userLevel)
-    let hexColor = (gUser instanceof GMember && gUser.displayHexColor != '#000000') ? gUser.displayHexColor : '#00EDFF'
-    let canvas = can.createCanvas(1200, 300)
-    let context = canvas.getContext('2d')
-    context.fillStyle = hexColor
-    context.drawImage(await loadImage((await createNameCard(gUser2.namecard)).toBuffer()), 0, 0, 1200, 300)
-    context.globalCompositeOperation = 'destination-over'
+    let userLevel = user.getLevel();
+    const avatarURL = gUser.displayAvatarURL({ extension: 'png' });
+    const lastRequirement = (userLevel > 1) ? DataManager.getLevelRequirement(userLevel - 1) : 0;
+    const requirement = DataManager.getLevelRequirement(userLevel);
+    let hexColor = (gUser instanceof GMember && gUser.displayHexColor != '#000000') ? gUser.displayHexColor : '#00EDFF';
+    let canvas = can.createCanvas(1200 * resolution, 300 * resolution);
+    let context = canvas.getContext('2d');
+    context.fillStyle = hexColor;
+    context.drawImage(await loadImage((await createNameCard(gUser2.namecard)).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
+    context.globalCompositeOperation = 'destination-over';
     // Avatar PFP
-    let avatarCanvas = can.createCanvas(260, 260)
-    let avatarContext = avatarCanvas.getContext('2d')
-    avatarContext.arc(130, 130, 130, 0, Math.PI * 2, true)
-    avatarContext.fill()
-    avatarContext.globalCompositeOperation = 'source-in'
-    avatarContext.drawImage(await can.loadImage(avatarURL ? avatarURL + "?size=1024" : './build/assets/images/namecards/namecard.png'), 0, 0, 260, 260)
-    context.drawImage(await can.loadImage(avatarCanvas.toBuffer()), 20, 20, 260, 260)
+    let avatarCanvas = can.createCanvas(260 * resolution, 260 * resolution);
+    let avatarContext = avatarCanvas.getContext('2d');
+    avatarContext.arc(130 * resolution, 130 * resolution, 130 * resolution, 0, Math.PI * 2, true);
+    avatarContext.fill();
+    avatarContext.globalCompositeOperation = 'source-in';
+    avatarContext.drawImage(await can.loadImage(avatarURL ? avatarURL + "?size=1024" : './build/assets/images/namecards/namecard.png'), 0, 0, 260 * resolution, 260 * resolution);
+    context.drawImage(await can.loadImage(avatarCanvas.toBuffer()), 20 * resolution, 20 * resolution, 260 * resolution, 260 * resolution);
     // Background
-    let percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700)
-    context.fillRect(325, 200, percent, 50)
-    context.globalCompositeOperation = 'source-over'
-    context.font = '40px Segmento'
-    context.fillText(gUser.displayName, 325, 180)
-    context.fillStyle = '#ffffff'
-    context.fillText(`Rank #${rank ? rank : user.getRank()}`, 325, 60)
-    context.fillStyle = hexColor
-    context.font = '30px Segmento'
-    let wid = context.measureText(`Level`).width
-    context.font = '40px Segmento'
-    let wid2 = context.measureText(user.getLevel().toString()).width
-    context.fillText(user.getLevel().toString(), 1100 - (wid2), 75)
-    context.font = '30px Segmento'
-    context.fillText(`Level`, 1100 - (wid2 + wid), 75)
-    wid = context.measureText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`).width
-    context.fillStyle = '#ffffff'
-    context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, 1025 - wid, 180)
-    return canvas
+    let percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700 * resolution);
+    context.fillRect(325 * resolution, 200 * resolution, percent, 50 * resolution);
+    context.globalCompositeOperation = 'source-over';
+    context.font = `${40 * resolution}px Segmento`;
+    context.fillText(gUser.displayName, 325 * resolution, 180 * resolution);
+    context.fillStyle = '#ffffff';
+    context.fillText(`Rank #${rank ? rank : user.getRank()}`, 325 * resolution, 60 * resolution);
+    context.fillStyle = hexColor;
+    context.font = `${30 * resolution}px Segmento`;
+    let wid = context.measureText(`Level`).width;
+    context.font = `${40 * resolution}px Segmento`;
+    let wid2 = context.measureText(user.getLevel().toString()).width;
+    context.fillText(user.getLevel().toString(), (1100 - (wid2)) * resolution, 75 * resolution);
+    context.font = `${30 * resolution}px Segmento`;
+    context.fillText(`Level`, (1100 - (wid2 + wid)) * resolution, 75 * resolution);
+    wid = context.measureText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`).width;
+    context.fillStyle = '#ffffff';
+    context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
+    return canvas;
 }
 // Client Events
 client.on('ready', async () => {
