@@ -1,2 +1,4 @@
 node_modules/canvas/
-Compiled/assets/token.json
+build/assets/token.json
+token.json
+build.zip

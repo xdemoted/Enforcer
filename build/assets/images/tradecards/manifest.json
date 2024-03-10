@@ -1,0 +1,186 @@
+{
+    "cards": [
+        {
+            "id": 1,
+            "title": "Slenderman",
+            "rank": 3,
+            "description": "A tall, thin, horrifying figure with unnaturally long arms and a featureless face, is reputed to be responsible for the haunting and disappearance of countless children and teens.",
+            "background": "slenderman.png"
+        },
+        {
+            "id": 2,
+            "title": "The Rake",
+            "rank": 2,
+            "description": "A humanoid creature with pale skin, long arms, and a mouth full of sharp teeth. It is known to stalk and attack humans, often causing them to go insane.",
+            "background": "rake.png"
+        },
+        {
+            "id": 3,
+            "title": "The Mothman",
+            "rank": 2,
+            "description": "A creature with glowing red eyes and large wings, is said to be a harbinger of doom and disaster.",
+            "background": "mothman.png"
+        },
+        {
+            "id": 4,
+            "title": "The Jersey Devil",
+            "rank": 2,
+            "description": "A creature with the body of a kangaroo, the head of a horse, bat-like wings, and a forked tail, is said to haunt the Pine Barrens of New Jersey. It is often associated with livestock killings and other unexplained events.",
+            "background": "jerseydevil.png"
+        },
+        {
+            "id": 5,
+            "title": "The Wendigo",
+            "rank": 3,
+            "description": "A creature with the body of a human and the head of a deer, is said to be a cannibalistic spirit that haunts the forests of the northern United States and Canada. It is often associated with the winter and the hunger that comes with it.",
+            "background": "wendigo.png"
+        },
+        {
+            "id": 6,
+            "title": "The Chupacabra",
+            "rank": 2,
+            "description": "A creature with the body of a dog, the head of a reptile, and sharp spines running down its back, is said to attack and drain the blood of livestock.",
+            "background": "chupacabra.png"
+        },
+        {
+            "id": 7,
+            "title": "The Flatwoods Monster",
+            "rank": 2,
+            "description": "A creature with a spade-shaped head, glowing eyes, and a metallic body, is said to have been sighted in the town of Flatwoods, West Virginia.",
+            "background": "flatwoodsmonster.png"
+        },
+        {
+            "id": 8,
+            "title": "The Dover Demon",
+            "rank": 1,
+            "description": "A creature with a large, hairless head, glowing eyes, and long, thin arms and legs, is said to have been sighted in the town of Dover, Massachusetts.",
+            "background": "doverdemon.png"
+        },
+        {
+            "id": 9,
+            "title": "The Hopkinsville Goblins",
+            "rank": 1,
+            "description": "A group of small, green, goblin-like creatures, is said to have been sighted in the town of Hopkinsville, Kentucky. They are often associated with sightings of UFOs and other unexplained phenomena.",
+            "background": "hopkinsvillegoblins.png"
+        },
+        {
+            "id": 10,
+            "title": "The Loveland Frog",
+            "rank": 2,
+            "description": "A creature with the body of a frog and the head of a lizard, is said to have been sighted in the town of Loveland, Ohio.",
+            "background": "lovelandfrog.png"
+        },
+        {
+            "id": 11,
+            "title": "The Fresno Nightcrawler",
+            "rank": 2,
+            "description": "A creature with a long, thin body and no visible arms, is said to have been sighted in the town of Fresno, California.",
+            "background": "fresnonightcrawler.png"
+        },
+        {
+            "id": 12,
+            "title": "Weeping Angel",
+            "rank": 3,
+            "description": "A quantum-locked alien race from the British television series Doctor Who. They appear as statues when observed, but can move at incredible speeds when unobserved.",
+            "background": "weepingangel.png"
+        },
+        {
+            "id": 13,
+            "title": "The Loch Ness Monster",
+            "rank": 1,
+            "description": "A creature said to inhabit Loch Ness, a large freshwater lake in Scotland. It is often described as a large, long-necked, and humpbacked creature.",
+            "background": "lochnessmonster.png"
+        },
+        {
+            "id": 14,
+            "title": "Kappa",
+            "rank": 1,
+            "description": "A creature from Japanese folklore, often depicted as a humanoid with a turtle-like shell and a dish on its head. Kappas are known for their mischievous behavior and their love for cucumbers.",
+            "background": "kappa.png"
+        },
+        {
+            "id": 15,
+            "title": "Unknown",
+            "rank": 1,
+            "description": "A mysterious creature from the Willy Chocolate Show. Not much is known about it.",
+            "background": "unknown.png"
+        },
+        {
+            "id": 16,
+            "title": "Ningen",
+            "rank": 1,
+            "description": "A creature from Japanese folklore, often described as a giant humanoid with pale skin and a featureless face. Ningen are said to inhabit the icy waters of the Antarctic.",
+            "background": "ningen.png"
+        },
+        {
+            "id": 17,
+            "title": "The Mongolian Death Worm",
+            "rank": 1,
+            "description": "A creature said to inhabit the Gobi Desert in Mongolia. It is often described as a large, red, worm-like creature with the ability to spit venom.",
+            "background": "mongoliandeathworm.png"
+        },
+        {
+            "id": 18,
+            "title": "The Bunyip",
+            "rank": 1,
+            "description": "A creature from Australian Aboriginal mythology, often described as a large, water-dwelling creature with a long neck, sharp teeth, and a loud, booming call.",
+            "background": "bunyip.png"
+        },
+        {
+            "id": 19,
+            "title": "The Yowie",
+            "rank": 1,
+            "description": "A creature from Australian Aboriginal mythology, often described as a large, hairy, ape-like creature that inhabits the forests and mountains of Australia.",
+            "background": "yowie.png"
+        },
+        {
+            "id": 20,
+            "title": "The Drop Bear",
+            "rank": 1,
+            "description": "A creature from Australian folklore, often described as a large, carnivorous koala that drops from trees to attack unsuspecting victims.",
+            "background": "dropbear.png"
+        },
+        {
+            "id": 21,
+            "title": "George Washington’s Dodge Challenger",
+            "rank": 2,
+            "description": "The Dodge Challenger associated with George Washington is a legendary vehicle that has become part of American folklore. It is often described as a powerful, freedom-loving muscle car that roared through the streets during the American Revolutionary War.",
+            "background": "george_washington_dodge_challenger.png"
+        }
+    ],
+    "collections": [
+        {
+            "id": 1,
+            "title": "Cryptids",
+            "cards": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20
+            ]
+        },
+        {
+            "id": 2,
+            "title": "Independent",
+            "cards": [
+                21
+            ]
+        }
+    ]
+}
