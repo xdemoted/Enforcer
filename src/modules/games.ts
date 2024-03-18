@@ -1,30 +1,33 @@
-import { ActionRowBuilder, Client, ColorResolvable, EmbedBuilder, MessageCollector, StringSelectMenuBuilder, StringSelectMenuInteraction, TextChannel, ThreadChannel, GuildMember as DiscordGuildMember, InteractionCollector, ComponentType, ForumChannel, CommandInteraction } from 'discord.js';
+import { ActionRowBuilder, Client, ColorResolvable, EmbedBuilder, MessageCollector, StringSelectMenuBuilder, StringSelectMenuInteraction, TextChannel, ThreadChannel, GuildMember as DiscordGuildMember, InteractionCollector, ComponentType, ForumChannel, CommandInteraction, CacheType, Message, AttachmentBuilder } from 'discord.js';
 import axios from 'axios';
-import data, { GuildMember, GuildMemberManager, MessageManager } from './data';
+import data, { GetFile, Guild, GuildMember, GuildMemberManager, MessageManager, eventEmitter } from './data';
 import { RunTimeEvents } from './RunTimeEvents';
-import { algGen, generateEquation, isOdd, isSqrt, maps, multiples, numberedStringArraySingle, random, stringMax, triviaData } from './utilities';
+import { algGen, cardDraw, generateEquation, isOdd, isSqrt, maps, multiples, numberedStringArraySingle, openChestGif, random, stringMax, triviaData } from './utilities';
+import fs from 'fs'
+import { Canvas, loadImage } from 'canvas';
 export type GameValues = { guildId: string, currentValue: string, reward: number, type: number }
 
-function wordScramble(word: string) {
-    let scrambledWord = "";
-    const wordArray = word.split("");
-    while (wordArray.length > 0) {
-        const randomIndex = Math.floor(Math.random() * wordArray.length);
-        scrambledWord += wordArray.splice(randomIndex, 1)[0];
-    }
-    return scrambledWord;
-}
-
-class mathGame {
+class baseGame extends eventEmitter {
     client: Client;
     channel: TextChannel;
-    collector: (MessageCollector | undefined);
+    collector: InteractionCollector<StringSelectMenuInteraction<CacheType>> | MessageCollector | undefined;
     constructor(client: Client, channel: TextChannel) {
+        super()
         this.channel = channel;
         this.client = client;
     }
+    init():void {}
+    end() {
+        if (this.collector) this.collector.stop();
+    }
+
+}
+class mathGame extends baseGame {
+    constructor(client: Client, channel: TextChannel) {
+        super(client, channel)
+    }
     async init() {
-        let difficulty = 3//random(1, 3)
+        let difficulty = random(1, 3)
         let equation: [string, number] = ['error: type 0 to answer correctly', 0]
         let color: ColorResolvable = "Green"
         switch (difficulty) {
@@ -40,30 +43,18 @@ class mathGame {
                 color = "Red"
             } break;
         }
-        let reward = difficulty == 1 ? 100 : difficulty == 2 ? 200 : 300
-        let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + reward + "xp" }).setColor(color)
+        let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + difficulty*100 + "xp" }).setColor(color)
         let answer = equation[1]
         if (this.channel instanceof TextChannel) {
             let message = await this.channel.send({ embeds: [embed] })
             this.collector = this.channel.createMessageCollector({ time: 3600000 })
             this.collector.on('collect', async msg => {
                 if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
-                    let gemReward = random(1, 5)
-                    let user = new GuildMemberManager(data.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id))
-
-                    user.addXP(reward, this.channel.id)
-                    user.addWallet(10)
-                    user.userManager.addGems(gemReward)
-
+                    this.emit('correctAnswer', msg,difficulty*100)
                     embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
                         .setTitle(`${msg.member?.displayName} solved the problem.`)
-                        .setFooter({ text: "Solved for " + reward + " xp" })
+                        .setFooter({ text: "Solved for " + difficulty*100 + " xp" })
                     message.edit({ embeds: [embed] })
-                    let rewardMsg = await msg.channel.send(MessageManager.getMessage('rewards.generic', [msg.author.id, reward, 10, gemReward]))
-                    setTimeout(() => {
-                        if (msg.deletable) msg.delete()
-                        rewardMsg.delete()
-                    }, 20000)
                     if (this.collector) this.collector.stop();
                 }
             })
@@ -74,13 +65,9 @@ class mathGame {
         if (this.collector) this.collector.stop();
     }
 }
-class triviaGame {
-    client: Client;
-    channel: TextChannel;
-    collector: (InteractionCollector<StringSelectMenuInteraction> | undefined);
+class triviaGame extends baseGame {
     constructor(client: Client, channel: TextChannel) {
-        this.client = client;
-        this.channel = channel;
+        super(client,channel)
     }
     async init() {
         let embed = new EmbedBuilder().setTitle("Trivia").setTimestamp().setColor("Green")
@@ -113,6 +100,7 @@ class triviaGame {
                 .addComponents(selectmenu)
             embed.setDescription(stringMax(trivia.question, 4096))
             let triviaMessage = await this.channel.send({ embeds: [embed], components: [row] })
+
             let answerers: String[] = []
             let CorrectAnswerers: String[] = []
             console.log("Trivia:", trivia.correctAnswer)
@@ -121,24 +109,17 @@ class triviaGame {
                 if (interaction.customId == "trivia" && interaction instanceof StringSelectMenuInteraction && !answerers.includes(interaction.user.id) && member instanceof DiscordGuildMember) {
                     answerers.push(interaction.user.id)
                     if (interaction.values[0] == answerIndex.toString()) {
-                        interaction.deferUpdate()
-                        CorrectAnswerers.push(interaction.user.id)
-                        let user = new GuildMemberManager(data.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id))
-                        let reward = (trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length
-                        let gemReward = random(1, Math.ceil(reward / 100))
-                        user.addXP(reward, this.channel.id)
-                        user.addWallet(10)
-                        user.userManager.addGems(random(1, Math.ceil(reward / 100)))
 
+                        CorrectAnswerers.push(interaction.user.id)
+                        this.emit('correctAnswer',interaction,Math.round(trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length)
+                        
+                        interaction.deferUpdate()
                         embed.addFields([{ name: numberedStringArraySingle('', CorrectAnswerers.length - 1), value: member.displayName, inline: true }])
                         triviaMessage.edit({ embeds: [embed], components: [row] })
-                        let message = await interaction.channel?.send(MessageManager.getMessage('rewards.generic', [interaction.user.id, reward, 10, gemReward]))
-                        setTimeout(() => {
-                            message?.delete()
-                        }, 20000);
                     } else {
                         let user = new GuildMemberManager(data.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id))
                         user.addXP(25, this.channel.id)
+                        user.userManager.addXP(25)
                         let message = await interaction.reply({ content: MessageManager.getMessage('rewards.trivia.incorrect', [interaction.user.id, 25, trivia.correctAnswer]), ephemeral: true })
                         setTimeout(() => {
                             message?.delete()
@@ -157,13 +138,9 @@ class triviaGame {
         if (this.collector) this.collector.stop();
     }
 }
-class scrambleGame {
-    client: Client;
-    channel: TextChannel;
-    collector: MessageCollector | undefined;
+class scrambleGame extends baseGame {
     constructor(client: Client, channel: TextChannel) {
-        this.channel = channel;
-        this.client = client;
+        super(client,channel)
     }
     async init() {
         let word: string = ''
@@ -187,37 +164,29 @@ class scrambleGame {
         }
         let scrambledWord = word
         while (word == scrambledWord) {
-            scrambledWord = wordScramble(word)
+            scrambledWord = scrambleGame.wordScramble(word)
         }
         let embed = new EmbedBuilder().setTitle("Unscramble The Word").setDescription(scrambledWord).setTimestamp().setColor(difficulty == 1 ? "Green" : difficulty == 2 ? "Yellow" : "Red")
-        const value = Math.round(100 * ((length - 3) ** 0.75))
-        embed.setFooter({ text: "Unscramble for " + value + "xp" })
+        const reward = Math.round(100 * ((length - 3) ** 0.75))
+        embed.setFooter({ text: "Unscramble for " + reward + "xp" })
         let message = await this.channel.send({ embeds: [embed] })
         let solved = false
         this.collector = this.channel.createMessageCollector({ time: 3600000 })
         this.collector.on('collect', async msg => {
             if (msg.content.toLowerCase() == word.toLowerCase()) {
-                let user = new GuildMemberManager(data.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id))
-                user.addXP(value, this.channel.id)
-                user.addWallet(10)
-                user.userManager.addGems(random(1, Math.ceil(value / 100)))
+                this.emit('correctanswer',msg,reward)
+                solved = true
                 embed.setFields([{ name: "Answer", value: word, inline: true }])
                     .setTitle(`${msg.member?.displayName} unscrambled the word.`)
-                    .setFooter({ text: "Unscrambled for " + value + "xp" })
+                    .setFooter({ text: "Unscrambled for " + reward + "xp" })
                     .setColor("NotQuiteBlack")
                 message.edit({ embeds: [embed] })
-                let rewardMsg = await msg.channel.send(`<@${msg.author.id}> unscrambled the word.`)
-                solved = true
-                setTimeout(() => {
-                    if (msg.deletable) msg.delete()
-                    rewardMsg.delete()
-                }, 20000)
                 if (this.collector) this.collector.stop();
             }
         })
         this.collector.on('end', () => {
             if (!solved) {
-                embed.setFooter({ text: "Unscramble for " + value + "xp" })
+                embed.setFooter({ text: "Unscramble for " + reward + "xp" })
                     .setFields([{ name: "Answer", value: word, inline: true }])
                     .setColor("NotQuiteBlack")
                 message.edit({ embeds: [embed] })
@@ -227,57 +196,24 @@ class scrambleGame {
     end() {
         if (this.collector) this.collector.stop();
     }
-}
-export class games {
-    client: Client;
-    channel: string;
-    game: mathGame | triviaGame | scrambleGame | undefined;
-    constructor(client: Client, channel: string) {
-        this.channel = channel;
-        this.client = client;
-    }
-    init() {
-        if (this.game) this.game.end()
-        let randomNum = 1//random(1, 4)
-        let channel = this.client.channels.cache.get(this.channel)
-        if (channel instanceof TextChannel) {
-            switch (randomNum) {
-                case 1: {
-                    console.log("math")
-                    this.game = new mathGame(this.client, channel)
-                    this.game.init()
-                } break;
-                case 2: {
-                    console.log("trivia")
-                    this.game = new triviaGame(this.client, channel)
-                    this.game.init()
-                } break;
-                case 3: {
-                    console.log("flag")
-                    this.game = new flagGuesser(this.client, channel)
-                    this.game.init()
-                } break;
-                default: {
-                    console.log("unscramble")
-                    this.game = new scrambleGame(this.client, channel)
-                    this.game.init()
-                } break;
-            }
+    static wordScramble(word: string) {
+        let scrambledWord = "";
+        const wordArray = word.split("");
+        while (wordArray.length > 0) {
+            const randomIndex = Math.floor(Math.random() * wordArray.length);
+            scrambledWord += wordArray.splice(randomIndex, 1)[0];
         }
+        return scrambledWord;
     }
 }
-export class flagGuesser {
-    client: Client;
-    channel: TextChannel;
-    collector: MessageCollector | undefined;
+class flagGuesser extends baseGame {
     constructor(client: Client, channel: TextChannel) {
-        this.channel = channel;
-        this.client = client;
+        super(client, channel)
     }
     async init() {
         if (this.channel instanceof TextChannel) {
             let embed = new EmbedBuilder().setTitle("Flag Guesser").setDescription("Guess the country of the flag.").setTimestamp().setColor("Aqua")
-            let codes: { countries: { [code: string]: string }, states: { [code: string]: string } } = require('../assets/countrycodes.json')
+            let codes: { countries: { [code: string]: string }, states: { [code: string]: string } } = require(GetFile.assets+'/countrycodes.json')
             let code = Object.keys(codes.countries)[random(0, Object.keys(codes.countries).length)]
             let options: string[] = []
             for (let i = 0; i < 3; i++) {
@@ -307,20 +243,14 @@ export class flagGuesser {
                         let user = new GuildMemberManager(data.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id))
                         console.log(code, options, interaction.values[0])
                         if (interaction.values[0] == code) {
+                            this.emit('correctAnswer', interaction)
                             CorrectAnswerers.push(interaction.user.id)
-                            user.addXP(100, this.channel.id)
-                            user.addWallet(10)
-                            user.userManager.addGems(random(1, 3))
 
                             embed.addFields([{ name: numberedStringArraySingle('', CorrectAnswerers.length - 1), value: interaction.member.displayName, inline: true }])
                             message.edit({ embeds: [embed], components: [row] })
-
-                            let rewardMsg = await interaction.reply(MessageManager.getMessage('rewards.generic', [interaction.user.id, 100, 10, random(1, 3)]))
-                            setTimeout(() => {
-                                rewardMsg.delete()
-                            }, 20000)
                         } else {
                             user.addXP(25, this.channel.id)
+                            user.userManager.addXP(25)
                             let rewardMsg = await interaction.reply({ content: MessageManager.getMessage('rewards.flagincorrect', [interaction.user.id, 25, codes.countries[code]]), ephemeral: true })
                             setTimeout(() => {
                                 rewardMsg.delete()
@@ -335,6 +265,76 @@ export class flagGuesser {
         if (this.collector) this.collector.stop();
     }
 
+}
+export class games {
+    client: Client;
+    channel: string;
+    mania = false;
+    game: mathGame | triviaGame | scrambleGame | undefined;
+    constructor(client: Client, channel: string, mania?: boolean) {
+        this.channel = channel;
+        this.client = client;
+        mania = mania
+    }
+    init() {
+        if (this.game) this.game.end()
+        let randomNum = random(1, 4)
+        let channel = this.client.channels.cache.get(this.channel)
+        if (channel instanceof TextChannel) {
+            switch (randomNum) {
+                case 1: {
+                    console.log("math")
+                    this.game = new mathGame(this.client, channel)
+                    this.game.init()
+                } break;
+                case 2: {
+                    console.log("trivia")
+                    this.game = new triviaGame(this.client, channel)
+                    this.game.init()
+                } break;
+                case 3: {
+                    console.log("flag")
+                    this.game = new flagGuesser(this.client, channel)
+                    this.game.init()
+                } break;
+                default: {
+                    console.log("unscramble")
+                    this.game = new scrambleGame(this.client, channel)
+                    this.game.init()
+                } break;
+            }
+            this.game.on('correctAnswer', (msg: Message, reward: number) => this.reward(msg,reward))
+        }
+    }
+    async reward(msg:Message|StringSelectMenuInteraction<CacheType>,reward=200) {
+        reward = Math.round(reward)
+        if (msg.guildId == undefined) return
+        let guild = data.getGuildManager(msg.guildId)
+        let user = guild.getMemberManager(guild.id)
+        let gemReward = random(1,5)
+        guild.addXP(reward)
+        user.addXP(reward, this.channel)
+        user.addWallet(Math.round(reward/10))
+        user.userManager.addXP(reward)
+        user.userManager.addGems(gemReward)
+        let card = cardDraw(true)
+        console.log(card)
+        if (card) {
+            let loading = new AttachmentBuilder(fs.readFileSync(GetFile.assets+"/images/loading88px.gif"), { name: "loading.gif" })
+            let rewardMsg = await msg.channel?.send({files:[loading]})
+            let attachment = new AttachmentBuilder(await openChestGif(card.background,card.rank),{name:"chestopen.gif"})
+            let embed = new EmbedBuilder()
+                            .setTitle('Reward')
+                            .setDescription(`Lucky you! Received a "${card.title}" card!\n+${gemReward} gems, +${Math.round(reward/10)} coins, +${reward} xp`)
+                            .setImage(`attachment://chestopen.gif`)
+            await rewardMsg?.edit({ embeds: [embed], files: [attachment] })
+        }
+        let rewardMsg = await msg.channel?.send(MessageManager.getMessage('rewards.generic', [msg instanceof Message?msg.author.id:msg.user.id, reward, 10, gemReward]))
+        setTimeout(() => {
+            if (msg instanceof Message&&msg.deletable) msg.delete()
+            if (rewardMsg&&rewardMsg.deletable) rewardMsg.delete()
+        }, 20000)
+    }
 }
 export class blackjackThread {
     channel: ForumChannel
@@ -398,7 +398,7 @@ export class dailyQB {
         })
         let users: { id: string, cd: number }[] = []
         let correctUsers: string[] = []
-        let collector = new InteractionCollector(this.client, { channel: channel, time: 3600000, filter: (interaction) => interaction.isCommand() })
+        let collector = new InteractionCollector(this.client as Client<true>, { channel: channel, time: 3600000, filter: (interaction) => interaction.isCommand() })
         collector.on('collect', async interaction => {
             if (interaction.isCommand() && (interaction as CommandInteraction).commandName == 'answer') {
                 let command = interaction as CommandInteraction

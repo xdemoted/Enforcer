@@ -150,7 +150,7 @@
     ],
     "collections": [
         {
-            "id": 1,
+            "id": 0,
             "title": "Cryptids",
             "cards": [
                 1,
@@ -173,10 +173,11 @@
                 18,
                 19,
                 20
-            ]
+            ],
+            "background": "cryptids.png"
         },
         {
-            "id": 2,
+            "id": 1,
             "title": "Independent",
             "cards": [
                 21

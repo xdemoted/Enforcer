@@ -88,8 +88,8 @@ function getWelcomeBanner(imagelink) {
         return canvas.toBuffer('image/png');
     });
 }
-function getLeaderCard(users, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getLeaderCard(users_1) {
+    return __awaiter(this, arguments, void 0, function* (users, resolution = 1) {
         let canvas = canvas_1.default.createCanvas(2450 * resolution, 1925 * resolution);
         let context = canvas.getContext('2d');
         for (let i = 0; i < users.length; i++) {
@@ -98,8 +98,8 @@ function getLeaderCard(users, resolution = 1) {
         return canvas;
     });
 }
-function getNamecard(gUser, rank, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getNamecard(gUser_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (gUser, rank, resolution = 1) {
         let user;
         let gUser2;
         if (gUser instanceof discord_js_1.User) {
@@ -153,6 +153,7 @@ function getNamecard(gUser, rank, resolution = 1) {
 // Client Events
 client.on('ready', () => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    new data_1.MessageStorageManager(client);
     data_1.default.eventEmitter.on('levelUp', (userID, channelID) => __awaiter(void 0, void 0, void 0, function* () {
         let channel = client.channels.cache.get(channelID);
         if (channel instanceof discord_js_1.TextChannel) {
@@ -349,11 +350,6 @@ client.on('interactionCreate', (interaction) => __awaiter(void 0, void 0, void 0
                                 }
                             }
                             let attachment = new discord_js_1.AttachmentBuilder((yield getLeaderCard(userList)).toBuffer('image/png'), { name: 'leaderboard.png' });
-                            let embed = new discord_js_1.EmbedBuilder()
-                                .setTitle(title)
-                                .setDescription(`Users are sorted by ${title.replace(' Leaderboard', '')}`)
-                                .setImage(`attachment://leaderboard.png`);
-                            yield msg.edit({ embeds: [embed], components: [row], files: [attachment] });
                         });
                         update('lxp');
                         msg.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.Button }).on('collect', (int) => __awaiter(void 0, void 0, void 0, function* () {

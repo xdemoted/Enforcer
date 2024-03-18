@@ -2,12 +2,29 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.manifest = exports.StatManager = exports.CollectorManager = exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.stats = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.MessageManager = exports.DataManager = exports.CacheData = exports.eventEmitter = void 0;
+exports.MessageStorageManager = exports.namecardManifest = exports.StatManager = exports.CollectorManager = exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.stats = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.MessageManager = exports.DataManager = exports.CacheData = exports.eventEmitter = exports.GetFile = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const events_1 = __importDefault(require("events"));
-const dataPath = path_1.default.join(__dirname, '../assets/stored/data.json');
+class GetFile {
+}
+exports.GetFile = GetFile;
+_a = GetFile;
+GetFile.assets = path_1.default.join(__dirname, '../assets');
+GetFile.namecardPath = _a.assets + '/images/namecards/manifest.json';
+GetFile.tradecardPath = _a.assets + "/images/tradecards/manifest.json";
+GetFile.serverPath = _a.assets + "/stored/data.json";
+GetFile.namecardManifest = () => {
+    return require(_a.namecardPath);
+};
+GetFile.tradecardManifest = () => {
+    return require(_a.tradecardPath);
+};
+GetFile.serverData = () => {
+    return require(_a.serverPath);
+};
 class eventEmitter extends events_1.default {
     constructor() {
         super();
@@ -29,10 +46,10 @@ class DataManager {
     constructor() {
         this.eventEmitter = emitter;
         this.get = () => {
-            return require(dataPath);
+            return GetFile.serverData();
         };
         this.write = () => {
-            return fs_1.default.writeFileSync(dataPath, JSON.stringify(this.cacheData));
+            return fs_1.default.writeFileSync(GetFile.serverPath, JSON.stringify(this.cacheData));
         };
         this.listFiles = () => {
             return fs_1.default.readdirSync('./assets/stored');
@@ -190,6 +207,13 @@ class GuildManager {
             }
             return this.addMember(id);
         };
+        this.getMemberManager = (id) => {
+            let member = this.guild.members.find(member => member.id == id);
+            if (member) {
+                return new GuildMemberManager(member);
+            }
+            return new GuildMemberManager(this.addMember(id));
+        };
         // Guild Global XP
         this.addXP = (xp) => {
             this.guild.xp += xp;
@@ -216,6 +240,7 @@ class GuildManager {
                 member.xp = xp;
             });
         };
+        this.id = guild.id;
         this.guild = guild;
         this.members = guild.members;
     }
@@ -496,12 +521,43 @@ class StatManager {
     }
 }
 exports.StatManager = StatManager;
-class manifest {
+class namecardManifest {
     constructor() {
         this.namecards = [];
     }
 }
-exports.manifest = manifest;
+exports.namecardManifest = namecardManifest;
+class MessageStorageManager {
+    constructor(client) {
+        this.cache = require(GetFile.assets + '/stored/messages.json');
+        for (let guild of this.cache.guilds) {
+            let Dguild = client.guilds.cache.get(guild.id);
+            if (!Dguild)
+                return;
+            for (let message of guild.messages) {
+                let channel = Dguild.channels.cache.get(message.channel);
+                if (!channel)
+                    guild.messages.splice(guild.messages.indexOf(message), 1);
+                let intent = message.intent;
+                if (intent.startsWith('catalog')) {
+                    let id = intent.slice(7, intent.length);
+                    console.log(id);
+                }
+            }
+        }
+    }
+    get(guildID, messageID) {
+        let guild = this.cache.guilds.find(guild => guild.id == guildID);
+        if (guild) {
+            let message = guild.messages.find(message => message.id == messageID);
+            if (message) {
+                return message;
+            }
+        }
+        return false;
+    }
+}
+exports.MessageStorageManager = MessageStorageManager;
 // Initialize Data
 let data = new DataManager();
 exports.default = data;

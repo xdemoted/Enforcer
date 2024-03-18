@@ -4,8 +4,8 @@
   "description": "",
   "main": "/build/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node build/index.js",
+    "test": "tsc && node build/debug/test.js",
+    "start": "tsc && node build/index.js",
     "cleanExport": "zip -r build.zip ./build && zip -d build.zip /build/assets && zip -ur build.zip ./package.json",
     "fullExport": "zip -r build.zip ./build && zip -ur build.zip ./package.json"
   },
@@ -15,9 +15,12 @@
     "axios": "^1.5.1",
     "canvas": "^2.11.2",
     "discord.js": "^14.13.0",
-    "quantize": "^1.0.2"
+    "gifencoder": "^2.0.1",
+    "quantize": "^1.0.2",
+    "typescript": "^5.4.2"
   },
   "devDependencies": {
+    "@types/gifencoder": "^2.0.3",
     "@types/jest": "^29.5.8",
     "@types/quantize": "^1.0.2"
   }

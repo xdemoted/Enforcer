@@ -1,6 +1,6 @@
 // Imports
 import { GuildMember as GMember, AttachmentBuilder, Client, ActionRowBuilder, CommandInteraction, Interaction, TextChannel, SelectMenuInteraction, EmbedField, User, ButtonBuilder, Partials, PermissionFlagsBits, ChannelType, EmbedBuilder, ButtonStyle, ComponentType, StringSelectMenuInteraction, StringSelectMenuBuilder, StageChannel, InteractionCollector, CacheType, GuildMember as DiscordGuildMember, SelectMenuComponentOptionData, MessageComponentInteraction, ForumChannel, Attachment } from "discord.js";
-import data, { GuildMemberManager, UserManager, DataManager, GuildManager, BaseUser, GlobalUser, GuildMember, CollectorManager, BaseUserManager, manifest } from './modules/data'
+import data, { GuildMemberManager, UserManager, DataManager, GuildManager, BaseUser, GlobalUser, GuildMember, CollectorManager, BaseUserManager, namecardManifest, MessageStorageManager } from './modules/data'
 import { RunTimeEvents, RunTimeEventsDebug } from "./modules/RunTimeEvents";
 import { dailyQB, games, blackjackThread } from "./modules/games";
 import { ChannelInteractionCollector, Dialogue, createNameCard, numberedStringArraySingle, random } from "./modules/utilities";
@@ -109,6 +109,7 @@ async function getNamecard(gUser: GMember | User, rank?: number, resolution = 1)
 }
 // Client Events
 client.on('ready', async () => {
+    new MessageStorageManager(client)
     data.eventEmitter.on('levelUp', async (userID: string, channelID: string) => {
         let channel = client.channels.cache.get(channelID)
         if (channel instanceof TextChannel) {
@@ -292,11 +293,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                             }
                         }
                         let attachment = new AttachmentBuilder((await getLeaderCard(userList)).toBuffer('image/png'), { name: 'leaderboard.png' })
-                        let embed = new EmbedBuilder()
-                            .setTitle(title)
-                            .setDescription(`Users are sorted by ${title.replace(' Leaderboard', '')}`)
-                            .setImage(`attachment://leaderboard.png`)
-                        await msg.edit({ embeds: [embed], components: [row], files: [attachment] })
+                        
                     }
                     update('lxp')
                     msg.createMessageComponentCollector({ componentType: ComponentType.Button }).on('collect', async int => {
@@ -621,7 +618,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
                 }
                     break;
                 case 'publicshop': {
-                    let data: manifest = require('./assets/images/namecards/manifest.json')
+                    let data: namecardManifest = require('./assets/images/namecards/manifest.json')
                     let namecards = data.namecards
                     let canvas = can.createCanvas(2450, 1925)
                     let context = canvas.getContext('2d')

@@ -12,11 +12,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
+exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
 const canvas_1 = require("canvas");
 const path_1 = __importDefault(require("path"));
 const discord_js_1 = require("discord.js");
 const events_1 = __importDefault(require("events"));
+const fs_1 = __importDefault(require("fs"));
+const crypto_1 = require("crypto");
+const data_1 = require("./data");
+const gifencoder_1 = __importDefault(require("gifencoder"));
 var quantize = require('quantize');
 const startChance = 0.01;
 exports.maps = {
@@ -234,8 +238,8 @@ function generateEquation(map) {
     return [string, finalSolution];
 }
 exports.generateEquation = generateEquation;
-function createBackgroundImage(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createBackgroundImage(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution);
@@ -257,8 +261,8 @@ function createBackgroundImage(url, resolution = 1) {
         return canvas;
     });
 }
-function createTemplate(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createTemplate(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         let palette = yield getPalette(url);
@@ -287,8 +291,8 @@ function createTemplate(url, resolution = 1) {
         return canvas;
     });
 }
-function createNameCard(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createNameCard(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         //try {
         //    await loadImage(url)
         //} catch (error) {
@@ -537,3 +541,124 @@ class ContextUtilities {
     }
 }
 exports.ContextUtilities = ContextUtilities;
+//
+// Trading Card Game Utilities
+//
+function cardDraw(guarantee) {
+    let cards = data_1.GetFile.tradecardManifest().cards;
+    cards = cards.sort(() => Math.random() - 0.5);
+    let weightTotal = cards.reduce((acc, card) => acc + (card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2), 0);
+    let threshold = (0, crypto_1.randomInt)(0, weightTotal);
+    let card;
+    if (guarantee || (0, crypto_1.randomInt)(0, 100) < 10) {
+        for (let card of cards) {
+            threshold -= card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2;
+            if (threshold <= 0)
+                return card;
+        }
+    }
+    return card;
+}
+exports.cardDraw = cardDraw;
+function addFrame(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
+        let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
+        let ctx = canvas.getContext('2d');
+        let sourceImage;
+        if (source instanceof canvas_1.Canvas)
+            sourceImage = source;
+        else {
+            try {
+                sourceImage = yield (0, canvas_1.loadImage)(source);
+            }
+            catch (error) {
+                sourceImage = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + "/images/tradecards/backgrounds/default.png");
+            }
+        }
+        let frame;
+        if (rank == 1 || rank == 2 || rank == 3)
+            frame = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
+        else
+            frame = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + '/images/tradecards/frames/default.png');
+        ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale);
+        ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale);
+        return canvas;
+    });
+}
+exports.addFrame = addFrame;
+function createCatalog(id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let data = require(data_1.GetFile.assets + '/images/tradecards/manifest.json');
+        let cards = data.cards;
+        let catalog = data.collections.find(c => c.id == id);
+        if (catalog && catalog.background) {
+            let catalogCards = [];
+            let cardvas = new canvas_1.Canvas(1250 + 80, Math.ceil(cards.length / 5) * (370));
+            let cardctx = cardvas.getContext('2d');
+            for (let i = 0; i < catalog.cards.length; i++) {
+                const card = cards.find(c => c.id == catalog.cards[i]);
+                if (card)
+                    catalogCards.push(card);
+            }
+            catalogCards.sort((b, a) => a.rank - b.rank);
+            for (let i = 0; i < catalogCards.length; i++) {
+                const card = catalogCards[i];
+                if (card) {
+                    let image = yield addFrame(data_1.GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25);
+                    cardctx.drawImage(image, (i % 5) * (270), Math.floor(i / 5) * (370), 250, 350);
+                }
+            }
+            let catalogcanvas = new canvas_1.Canvas(1530, 2180);
+            let catalogctx = catalogcanvas.getContext('2d');
+            let background = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + `/images/tradecards/catalogs/${catalog.background}`);
+            catalogctx.drawImage(background, 0, 0, 1530, 2180);
+            catalogctx.drawImage(cardvas, 40, 560, 1450, 2000);
+            cardctx.drawImage(background, 0, 0);
+            return catalogcanvas;
+        }
+    });
+}
+exports.createCatalog = createCatalog;
+function openChestGif(background, rank) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let encoder = new gifencoder_1.default(250, 350);
+        encoder.setDelay(50);
+        encoder.setRepeat(-1);
+        encoder.start();
+        let frames = fs_1.default.readdirSync(data_1.GetFile.assets + '/images/tradecards/chestgif');
+        console.log(frames);
+        for (let i = 0; i < 25; i++) {
+            let image = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + '/images/tradecards/chestgif/1.gif');
+            let canvas = new canvas_1.Canvas(250, 350);
+            let ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#313338';
+            ctx.fillRect(0, 0, 250, 350);
+            ctx.drawImage(image, Math.round((0, crypto_1.randomInt)(i + 1) - (i + 1) / 2), Math.round((0, crypto_1.randomInt)(i + 1) - (i + 1) / 2), 250, 350);
+            //@ts-ignore
+            encoder.addFrame(ctx);
+        }
+        for (let i = 0; i < frames.length; i++) {
+            let image = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + '/images/tradecards/chestgif/' + frames[i]);
+            let image2 = yield addFrame(data_1.GetFile.assets + '/images/tradecards/backgrounds/' + background, rank);
+            let canvas = new canvas_1.Canvas(250, 350);
+            let ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#313338';
+            ctx.fillRect(0, 0, 250, 350);
+            ctx.drawImage(image, 0, 30 * i, 250, 350);
+            ctx.beginPath();
+            ctx.moveTo(0, 197 + 30 * i);
+            ctx.lineTo(250, 197 + 30 * i);
+            ctx.lineTo(250, 0);
+            ctx.lineTo(0, 0);
+            ctx.clip();
+            if (i != 0)
+                ctx.drawImage(image2, 55 - (55 / 7) * (i + 1), 197 - (197 / 7) * (i + 1), 144 + ((250 - 144) / 7) * (i + 1), 202 + ((350 - 202) / 7) * (i + 1));
+            //@ts-ignore
+            encoder.addFrame(ctx);
+            //if (i == 0) encoder.setDelay(50)
+        }
+        encoder.finish();
+        return encoder.out.getData();
+    });
+}
+exports.openChestGif = openChestGif;

@@ -35,29 +35,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dailyQB = exports.blackjackThread = exports.flagGuesser = exports.games = void 0;
+exports.dailyQB = exports.blackjackThread = exports.games = void 0;
 const discord_js_1 = require("discord.js");
 const axios_1 = __importDefault(require("axios"));
 const data_1 = __importStar(require("./data"));
 const RunTimeEvents_1 = require("./RunTimeEvents");
 const utilities_1 = require("./utilities");
-function wordScramble(word) {
-    let scrambledWord = "";
-    const wordArray = word.split("");
-    while (wordArray.length > 0) {
-        const randomIndex = Math.floor(Math.random() * wordArray.length);
-        scrambledWord += wordArray.splice(randomIndex, 1)[0];
-    }
-    return scrambledWord;
-}
-class mathGame {
+const fs_1 = __importDefault(require("fs"));
+class baseGame extends data_1.eventEmitter {
     constructor(client, channel) {
+        super();
         this.channel = channel;
         this.client = client;
     }
+    init() { }
+    end() {
+        if (this.collector)
+            this.collector.stop();
+    }
+}
+class mathGame extends baseGame {
+    constructor(client, channel) {
+        super(client, channel);
+    }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            let difficulty = 3; //random(1, 3)
+            let difficulty = (0, utilities_1.random)(1, 3);
             let equation = ['error: type 0 to answer correctly', 0];
             let color = "Green";
             switch (difficulty) {
@@ -79,8 +82,7 @@ class mathGame {
                     }
                     break;
             }
-            let reward = difficulty == 1 ? 100 : difficulty == 2 ? 200 : 300;
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + reward + "xp" }).setColor(color);
+            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color);
             let answer = equation[1];
             if (this.channel instanceof discord_js_1.TextChannel) {
                 let message = yield this.channel.send({ embeds: [embed] });
@@ -88,21 +90,11 @@ class mathGame {
                 this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
                     var _a;
                     if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
-                        let gemReward = (0, utilities_1.random)(1, 5);
-                        let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id));
-                        user.addXP(reward, this.channel.id);
-                        user.addWallet(10);
-                        user.userManager.addGems(gemReward);
+                        this.emit('correctAnswer', msg, difficulty * 100);
                         embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
                             .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} solved the problem.`)
-                            .setFooter({ text: "Solved for " + reward + " xp" });
+                            .setFooter({ text: "Solved for " + difficulty * 100 + " xp" });
                         message.edit({ embeds: [embed] });
-                        let rewardMsg = yield msg.channel.send(data_1.MessageManager.getMessage('rewards.generic', [msg.author.id, reward, 10, gemReward]));
-                        setTimeout(() => {
-                            if (msg.deletable)
-                                msg.delete();
-                            rewardMsg.delete();
-                        }, 20000);
                         if (this.collector)
                             this.collector.stop();
                     }
@@ -115,10 +107,9 @@ class mathGame {
             this.collector.stop();
     }
 }
-class triviaGame {
+class triviaGame extends baseGame {
     constructor(client, channel) {
-        this.client = client;
-        this.channel = channel;
+        super(client, channel);
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -157,29 +148,20 @@ class triviaGame {
                 let CorrectAnswerers = [];
                 console.log("Trivia:", trivia.correctAnswer);
                 this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: triviaMessage }).on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
-                    var _a;
                     let member = interaction.member;
                     if (interaction.customId == "trivia" && interaction instanceof discord_js_1.StringSelectMenuInteraction && !answerers.includes(interaction.user.id) && member instanceof discord_js_1.GuildMember) {
                         answerers.push(interaction.user.id);
                         if (interaction.values[0] == answerIndex.toString()) {
-                            interaction.deferUpdate();
                             CorrectAnswerers.push(interaction.user.id);
-                            let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
-                            let reward = (trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length;
-                            let gemReward = (0, utilities_1.random)(1, Math.ceil(reward / 100));
-                            user.addXP(reward, this.channel.id);
-                            user.addWallet(10);
-                            user.userManager.addGems((0, utilities_1.random)(1, Math.ceil(reward / 100)));
+                            this.emit('correctAnswer', interaction, Math.round(trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length);
+                            interaction.deferUpdate();
                             embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: member.displayName, inline: true }]);
                             triviaMessage.edit({ embeds: [embed], components: [row] });
-                            let message = yield ((_a = interaction.channel) === null || _a === void 0 ? void 0 : _a.send(data_1.MessageManager.getMessage('rewards.generic', [interaction.user.id, reward, 10, gemReward])));
-                            setTimeout(() => {
-                                message === null || message === void 0 ? void 0 : message.delete();
-                            }, 20000);
                         }
                         else {
                             let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
                             user.addXP(25, this.channel.id);
+                            user.userManager.addXP(25);
                             let message = yield interaction.reply({ content: data_1.MessageManager.getMessage('rewards.trivia.incorrect', [interaction.user.id, 25, trivia.correctAnswer]), ephemeral: true });
                             setTimeout(() => {
                                 message === null || message === void 0 ? void 0 : message.delete();
@@ -200,10 +182,9 @@ class triviaGame {
             this.collector.stop();
     }
 }
-class scrambleGame {
+class scrambleGame extends baseGame {
     constructor(client, channel) {
-        this.channel = channel;
-        this.client = client;
+        super(client, channel);
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -235,40 +216,31 @@ class scrambleGame {
             }
             let scrambledWord = word;
             while (word == scrambledWord) {
-                scrambledWord = wordScramble(word);
+                scrambledWord = scrambleGame.wordScramble(word);
             }
             let embed = new discord_js_1.EmbedBuilder().setTitle("Unscramble The Word").setDescription(scrambledWord).setTimestamp().setColor(difficulty == 1 ? "Green" : difficulty == 2 ? "Yellow" : "Red");
-            const value = Math.round(100 * ((length - 3) ** 0.75));
-            embed.setFooter({ text: "Unscramble for " + value + "xp" });
+            const reward = Math.round(100 * ((length - 3) ** 0.75));
+            embed.setFooter({ text: "Unscramble for " + reward + "xp" });
             let message = yield this.channel.send({ embeds: [embed] });
             let solved = false;
             this.collector = this.channel.createMessageCollector({ time: 3600000 });
             this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
                 var _a;
                 if (msg.content.toLowerCase() == word.toLowerCase()) {
-                    let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(msg.guildId ? msg.guildId : '').getMember(msg.author.id));
-                    user.addXP(value, this.channel.id);
-                    user.addWallet(10);
-                    user.userManager.addGems((0, utilities_1.random)(1, Math.ceil(value / 100)));
+                    this.emit('correctanswer', msg, reward);
+                    solved = true;
                     embed.setFields([{ name: "Answer", value: word, inline: true }])
                         .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} unscrambled the word.`)
-                        .setFooter({ text: "Unscrambled for " + value + "xp" })
+                        .setFooter({ text: "Unscrambled for " + reward + "xp" })
                         .setColor("NotQuiteBlack");
                     message.edit({ embeds: [embed] });
-                    let rewardMsg = yield msg.channel.send(`<@${msg.author.id}> unscrambled the word.`);
-                    solved = true;
-                    setTimeout(() => {
-                        if (msg.deletable)
-                            msg.delete();
-                        rewardMsg.delete();
-                    }, 20000);
                     if (this.collector)
                         this.collector.stop();
                 }
             }));
             this.collector.on('end', () => {
                 if (!solved) {
-                    embed.setFooter({ text: "Unscramble for " + value + "xp" })
+                    embed.setFooter({ text: "Unscramble for " + reward + "xp" })
                         .setFields([{ name: "Answer", value: word, inline: true }])
                         .setColor("NotQuiteBlack");
                     message.edit({ embeds: [embed] });
@@ -280,16 +252,89 @@ class scrambleGame {
         if (this.collector)
             this.collector.stop();
     }
+    static wordScramble(word) {
+        let scrambledWord = "";
+        const wordArray = word.split("");
+        while (wordArray.length > 0) {
+            const randomIndex = Math.floor(Math.random() * wordArray.length);
+            scrambledWord += wordArray.splice(randomIndex, 1)[0];
+        }
+        return scrambledWord;
+    }
+}
+class flagGuesser extends baseGame {
+    constructor(client, channel) {
+        super(client, channel);
+    }
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.channel instanceof discord_js_1.TextChannel) {
+                let embed = new discord_js_1.EmbedBuilder().setTitle("Flag Guesser").setDescription("Guess the country of the flag.").setTimestamp().setColor("Aqua");
+                let codes = require(data_1.GetFile.assets + '/countrycodes.json');
+                let code = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
+                let options = [];
+                for (let i = 0; i < 3; i++) {
+                    let randomCode = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
+                    while (randomCode == code || options.includes(randomCode)) {
+                        randomCode = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
+                    }
+                    options.push(randomCode);
+                }
+                options.push(code);
+                options = options.sort(() => Math.random() - 0.5);
+                let row = new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.StringSelectMenuBuilder().setCustomId("flag").setPlaceholder("Select a country").addOptions(options.map((option, index) => {
+                    return { label: codes.countries[option], value: option };
+                })));
+                //flag = (await axios.get(`https://flagcdn.com/w2560/${code}.png`)).request.res.responseUrl
+                embed.setImage(`https://flagcdn.com/w2560/${code}.png`);
+                let message = yield this.channel.send({ embeds: [embed], components: [row] });
+                let collector = message.createMessageComponentCollector({ time: 3600000 });
+                let answerers = [];
+                let CorrectAnswerers = [];
+                collector.on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
+                    if (interaction.customId == "flag" && interaction instanceof discord_js_1.StringSelectMenuInteraction) {
+                        if (answerers.includes(interaction.user.id))
+                            interaction.reply({ content: "You have already answered.", ephemeral: true });
+                        else {
+                            answerers.push(interaction.user.id);
+                            let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
+                            console.log(code, options, interaction.values[0]);
+                            if (interaction.values[0] == code) {
+                                this.emit('correctAnswer', interaction);
+                                CorrectAnswerers.push(interaction.user.id);
+                                embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: interaction.member.displayName, inline: true }]);
+                                message.edit({ embeds: [embed], components: [row] });
+                            }
+                            else {
+                                user.addXP(25, this.channel.id);
+                                user.userManager.addXP(25);
+                                let rewardMsg = yield interaction.reply({ content: data_1.MessageManager.getMessage('rewards.flagincorrect', [interaction.user.id, 25, codes.countries[code]]), ephemeral: true });
+                                setTimeout(() => {
+                                    rewardMsg.delete();
+                                }, 20000);
+                            }
+                        }
+                    }
+                }));
+            }
+        });
+    }
+    end() {
+        if (this.collector)
+            this.collector.stop();
+    }
 }
 class games {
-    constructor(client, channel) {
+    constructor(client, channel, mania) {
+        this.mania = false;
         this.channel = channel;
         this.client = client;
+        mania = mania;
     }
     init() {
         if (this.game)
             this.game.end();
-        let randomNum = 1; //random(1, 4)
+        let randomNum = (0, utilities_1.random)(1, 4);
         let channel = this.client.channels.cache.get(this.channel);
         if (channel instanceof discord_js_1.TextChannel) {
             switch (randomNum) {
@@ -322,79 +367,46 @@ class games {
                     }
                     break;
             }
+            this.game.on('correctAnswer', (msg, reward) => this.reward(msg, reward));
         }
+    }
+    reward(msg_1) {
+        return __awaiter(this, arguments, void 0, function* (msg, reward = 200) {
+            var _a, _b;
+            reward = Math.round(reward);
+            if (msg.guildId == undefined)
+                return;
+            let guild = data_1.default.getGuildManager(msg.guildId);
+            let user = guild.getMemberManager(guild.id);
+            let gemReward = (0, utilities_1.random)(1, 5);
+            guild.addXP(reward);
+            user.addXP(reward, this.channel);
+            user.addWallet(Math.round(reward / 10));
+            user.userManager.addXP(reward);
+            user.userManager.addGems(gemReward);
+            let card = (0, utilities_1.cardDraw)(true);
+            console.log(card);
+            if (card) {
+                let loading = new discord_js_1.AttachmentBuilder(fs_1.default.readFileSync(data_1.GetFile.assets + "/images/loading88px.gif"), { name: "loading.gif" });
+                let rewardMsg = yield ((_a = msg.channel) === null || _a === void 0 ? void 0 : _a.send({ files: [loading] }));
+                let attachment = new discord_js_1.AttachmentBuilder(yield (0, utilities_1.openChestGif)(card.background, card.rank), { name: "chestopen.gif" });
+                let embed = new discord_js_1.EmbedBuilder()
+                    .setTitle('Reward')
+                    .setDescription(`Lucky you! Received a "${card.title}" card!\n+${gemReward} gems, +${Math.round(reward / 10)} coins, +${reward} xp`)
+                    .setImage(`attachment://chestopen.gif`);
+                yield (rewardMsg === null || rewardMsg === void 0 ? void 0 : rewardMsg.edit({ embeds: [embed], files: [attachment] }));
+            }
+            let rewardMsg = yield ((_b = msg.channel) === null || _b === void 0 ? void 0 : _b.send(data_1.MessageManager.getMessage('rewards.generic', [msg instanceof discord_js_1.Message ? msg.author.id : msg.user.id, reward, 10, gemReward])));
+            setTimeout(() => {
+                if (msg instanceof discord_js_1.Message && msg.deletable)
+                    msg.delete();
+                if (rewardMsg && rewardMsg.deletable)
+                    rewardMsg.delete();
+            }, 20000);
+        });
     }
 }
 exports.games = games;
-class flagGuesser {
-    constructor(client, channel) {
-        this.channel = channel;
-        this.client = client;
-    }
-    init() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.channel instanceof discord_js_1.TextChannel) {
-                let embed = new discord_js_1.EmbedBuilder().setTitle("Flag Guesser").setDescription("Guess the country of the flag.").setTimestamp().setColor("Aqua");
-                let codes = require('../assets/countrycodes.json');
-                let code = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
-                let options = [];
-                for (let i = 0; i < 3; i++) {
-                    let randomCode = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
-                    while (randomCode == code || options.includes(randomCode)) {
-                        randomCode = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
-                    }
-                    options.push(randomCode);
-                }
-                options.push(code);
-                options = options.sort(() => Math.random() - 0.5);
-                let row = new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.StringSelectMenuBuilder().setCustomId("flag").setPlaceholder("Select a country").addOptions(options.map((option, index) => {
-                    return { label: codes.countries[option], value: option };
-                })));
-                //flag = (await axios.get(`https://flagcdn.com/w2560/${code}.png`)).request.res.responseUrl
-                embed.setImage(`https://flagcdn.com/w2560/${code}.png`);
-                let message = yield this.channel.send({ embeds: [embed], components: [row] });
-                let collector = message.createMessageComponentCollector({ time: 3600000 });
-                let answerers = [];
-                let CorrectAnswerers = [];
-                collector.on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
-                    if (interaction.customId == "flag" && interaction instanceof discord_js_1.StringSelectMenuInteraction) {
-                        if (answerers.includes(interaction.user.id))
-                            interaction.reply({ content: "You have already answered.", ephemeral: true });
-                        else {
-                            answerers.push(interaction.user.id);
-                            let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
-                            console.log(code, options, interaction.values[0]);
-                            if (interaction.values[0] == code) {
-                                CorrectAnswerers.push(interaction.user.id);
-                                user.addXP(100, this.channel.id);
-                                user.addWallet(10);
-                                user.userManager.addGems((0, utilities_1.random)(1, 3));
-                                embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: interaction.member.displayName, inline: true }]);
-                                message.edit({ embeds: [embed], components: [row] });
-                                let rewardMsg = yield interaction.reply(data_1.MessageManager.getMessage('rewards.generic', [interaction.user.id, 100, 10, (0, utilities_1.random)(1, 3)]));
-                                setTimeout(() => {
-                                    rewardMsg.delete();
-                                }, 20000);
-                            }
-                            else {
-                                user.addXP(25, this.channel.id);
-                                let rewardMsg = yield interaction.reply({ content: data_1.MessageManager.getMessage('rewards.flagincorrect', [interaction.user.id, 25, codes.countries[code]]), ephemeral: true });
-                                setTimeout(() => {
-                                    rewardMsg.delete();
-                                }, 20000);
-                            }
-                        }
-                    }
-                }));
-            }
-        });
-    }
-    end() {
-        if (this.collector)
-            this.collector.stop();
-    }
-}
-exports.flagGuesser = flagGuesser;
 class blackjackThread {
     constructor(channel, player) {
         this.channel = channel;

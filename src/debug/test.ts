@@ -2,12 +2,15 @@ import { Canvas, CanvasGradient, loadImage } from "canvas";
 var quantize = require('quantize');
 import * as fs from "fs";
 import { RgbPixel } from "quantize";
-import { ContextUtilities } from "../modules/utilities";
+import { ContextUtilities, random } from "../modules/utilities";
+import { GetFile, TradecardManifest, namecardManifest } from "../modules/data";
+import { randomInt } from "crypto"
+import GifEncoder from "gifencoder";
 const url = 'https://music.youtube.com/watch?v=6ywXBNpc-To&list=LM';
 async function createNamecard() {
     let canvas = new Canvas(1200, 300);
     let ctx = canvas.getContext('2d');
-    ctx.drawImage(await loadImage('./Compiled/assets/images/namecards/namecard.png'), 0, 0, 1200, 300)
+    ctx.drawImage(await loadImage(GetFile.assets + '/images/namecards/namecard.png'), 0, 0, 1200, 300)
     //ctx.globalCompositeOperation = 'source-in';
     ctx.globalCompositeOperation = 'difference';
     ctx.fillStyle = 'orange';
@@ -71,7 +74,7 @@ async function createNameCard(url: string) {
     try {
         await loadImage(url)
     } catch (error) {
-        url = "./Compiled/assets/images/namecards/namecard.png"
+        url = GetFile.assets + "/images/namecards/namecard.png"
     }
     let canvas = new Canvas(1200, 300);
     let ctx = canvas.getContext('2d');
@@ -195,8 +198,8 @@ async function testCard() {
     let canvas = new Canvas(1000, 1400)
     let ctx = canvas.getContext('2d');
     let util = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
-    let star = await loadImage('./assets/images/star.png')
-    let baseCard = await loadImage('./assets/images/tradecards/threestar.png')
+    let star = await loadImage(GetFile.assets + '/images/star.png')
+    let baseCard = await loadImage(GetFile.assets + '/images/tradecards/threestar.png')
     ctx.drawImage(baseCard, 0, 0, 1000, 1400)
     const offset = ((25 ** 2) / 2) ** 0.5
     ctx.beginPath()
@@ -225,7 +228,7 @@ async function testCard() {
     ctx.fill()
     fs.writeFileSync('../testFrame.png', canvas.toBuffer());
 }
-async function autoScaleCardBackground(url: string = './assets/images/tradecards/backgrounds/default.png', translation: [number, number] = [0, 0], scale: number = 1, mode: 'h' | 'w' = 'h', mark?: boolean) {
+async function autoScaleCardBackground(url: string = GetFile.assets + '/images/tradecards/backgrounds/default.png', translation: [number, number] = [0, 0], scale: number = 1, mode: 'h' | 'w' = 'h', mark?: boolean) {
     if (mode == 'h') {
         let image = await loadImage(url)
         let scaled = 1400 / image.height * scale
@@ -236,7 +239,7 @@ async function autoScaleCardBackground(url: string = './assets/images/tradecards
         return cardBackground(url, translation, [scaled, scaled], mark)
     }
 }
-async function cardBackground(url: string = './assets/images/tradecards/backgrounds/default.png', translation: [number, number] = [0, 0], scale: [number, number] = [1, 1], mark?: boolean) {
+async function cardBackground(url: string = GetFile.assets + '/images/tradecards/backgrounds/default.png', translation: [number, number] = [0, 0], scale: [number, number] = [1, 1], mark?: boolean) {
     let canvas = new Canvas(1000, 1400)
     let ctx = canvas.getContext('2d');
     let image = await loadImage(url)
@@ -288,12 +291,12 @@ async function addFrame(source: string | Canvas, rank: number, scale = 1) {
         try {
             sourceImage = await loadImage(source)
         } catch (error) {
-            sourceImage = await loadImage('./assets/images/tradecards/backgrounds/default.png')
+            sourceImage = await loadImage(GetFile.assets + "/images/tradecards/backgrounds/default.png")
         }
     }
     let frame
-    if (rank == 1 || rank == 2 || rank == 3) frame = await loadImage(`./assets/images/tradecards/frames/${rank}star.png`);
-    else frame = await loadImage('./assets/images/tradecards/frames/default.png');
+    if (rank == 1 || rank == 2 || rank == 3) frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
+    else frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
     ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale)
     ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale)
     return canvas;
@@ -306,21 +309,146 @@ async function createCard(source: string, rank: number, translation: [number, nu
     return frame
 }
 async function listCards() {
-    let manifest = require('./assets/images/tradecards/manifest.json')
+    let manifest = require(GetFile.assets + '/images/tradecards/manifest.json')
     console.log(manifest.cards)
     let resolution = 0.25
     let canvas = new Canvas(Math.floor((manifest.cards.length - 1) / 6) * 1000 * resolution + 1000 * resolution, 8400 * resolution)
     let context = canvas.getContext('2d')
     for (let i = 0; i < manifest.cards.length; i++) {
-        context.drawImage(await loadImage((await addFrame('./assets/images/tradecards/backgrounds/' + manifest.cards[i].background, manifest.cards[i].rank,)).toBuffer()), Math.floor(i / 6) * 1000 * resolution, (i % 6) * 1400 * resolution, 1000 * resolution, 1400 * resolution)
+        context.drawImage(await loadImage((await addFrame(GetFile.assets + '/images/tradecards/backgrounds/' + manifest.cards[i].background, manifest.cards[i].rank,)).toBuffer()), Math.floor(i / 6) * 1000 * resolution, (i % 6) * 1400 * resolution, 1000 * resolution, 1400 * resolution)
         console.log(i, "/", manifest.cards.length - 1, "done")
     }
     fs.writeFileSync('../cards.png', canvas.toBuffer());
     return canvas
 }
 let scale = 1
+let settings = { paddingX: 20, paddingY: 20 }
+async function createCatalog(id: number) {
+    let data: TradecardManifest = require(GetFile.assets + '/images/tradecards/manifest.json')
+    let cards = data.cards
+    let catalog = data.collections.find(c => c.id == id)
+    if (catalog && catalog.background) {
+        let catalogCards = []
+        let cardvas = new Canvas(1250 + settings.paddingX * 4, Math.ceil(cards.length / 5) * (350 + settings.paddingY))
+        let cardctx = cardvas.getContext('2d')
+        for (let i = 0; i < catalog.cards.length; i++) {
+            const card = cards.find(c => c.id == (catalog as { cards: number[] }).cards[i])
+            if (card) catalogCards.push(card)
+        }
+        catalogCards.sort((b, a) => a.rank - b.rank)
+        for (let i = 0; i < catalogCards.length; i++) {
+            const card = catalogCards[i]
+            if (card) {
+                let image = await addFrame(GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25)
+                cardctx.drawImage(image, (i % 5) * (250 + settings.paddingX), Math.floor(i / 5) * (350 + settings.paddingY), 250, 350)
+            }
+        }
+        let catalogcanvas = new Canvas(1530, 2180)
+        let catalogctx = catalogcanvas.getContext('2d')
+        let background = await loadImage(GetFile.assets + `/images/tradecards/catalogs/${catalog.background}`)
+        catalogctx.drawImage(background, 0, 0, 1530, 2180)
+        catalogctx.drawImage(cardvas, 40, 560, 1450, 2000)
+        cardctx.drawImage(background, 0, 0,)
+        fs.writeFileSync('./catalog.png', catalogcanvas.toBuffer())
+    }
+}
+function cardDraw(guarantee: boolean) {
+    let cards = GetFile.tradecardManifest().cards
+    let weightTotal = 0;
+    for (let i = 0; i < cards.length; i++) {
+        weightTotal += cards[i].rank == 1 ? 50 : cards[i].rank == 2 ? 25 : 2;
+    }
+    if (guarantee || randomInt(0, 100) < 10) {
+        let card;
+        while (card == undefined) {
+            let roll = randomInt(0, weightTotal)
+            let weight = 0;
+            for (let i = 0; i < cards.length; i++) {
+                weight += cards[i].rank == 1 ? 50 : cards[i].rank == 2 ? 25 : 2;
+                if (roll < weight) {
+                    card = cards[i]
+                    break;
+                }
+            }
+        }   
+        return card
+    } else return undefined
+}
+function multiDraw(amount: number, guarantee: boolean = false) {
+    let results = []
+    for (let i = 0; i < amount; i++) {
+        results.push(cardDraw(guarantee))
+    }
+    return results
+}
+function rollTest() {
+    let rolls = multiDraw(10000)
+    let fails = 0
+    let ones = 0
+    let twos = 0
+    let threes = 0
+    console.log(rolls.sort((a, b) => { return a?a.rank:0 - (b?b.rank:0) }))
+    for (let i = 0; i < rolls.length; i++) {
+        const roll = rolls[i];
+        if (roll?.rank == 0) fails++
+        else if (roll?.rank == 1) ones++
+        else if (roll?.rank == 2) twos++
+        else if (roll?.rank == 3) threes++
+    }
+    const total = ones + twos + threes
+    console.log('Failed Rolls:', fails / rolls.length * 100 + '%', `(${fails})`)
+    console.log('One Star Rolls:', ones / rolls.length * 100 + '%', `(${ones})`)
+    console.log('Two Star Rolls:', twos / rolls.length * 100 + '%', `(${twos})`)
+    console.log('Three Star Rolls:', threes / rolls.length * 100 + '%', `(${threes})`)
+    console.log('Three Star (Isolated):', Math.round(threes / total * 10000) / 100, '%')
+    console.log('Two Star (Isolated):', Math.round(twos / total * 10000) / 100, '%')
+    console.log('One Star (Isolated):', Math.round(ones / total * 10000) / 100, '%')
+}
+async function openChestGif() {
+    const start = Date.now()
+    let encoder = new GifEncoder(250, 350)
+    encoder.setDelay(50)
+    encoder.setRepeat(-1)
+    encoder.start()
+    let frames = fs.readdirSync(GetFile.assets + '/images/tradecards/chestgif')
+    console.log(frames)
+    for (let i = 0; i < 25; i++) {
+        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/1.gif')
+        let canvas = new Canvas(250, 350)
+        let ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#313338'
+        ctx.fillRect(0, 0, 250, 350)
+        ctx.drawImage(image, Math.round(randomInt(i + 1) - (i + 1) / 2), Math.round(randomInt(i + 1) - (i + 1) / 2), 250, 350)
+        //@ts-ignore
+        encoder.addFrame(ctx)
+    }
+    for (let i = 0; i < frames.length; i++) {
+        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/' + frames[i])
+        let image2 = await addFrame(GetFile.assets + '/images/tradecards/backgrounds/wendigo.png', 3)
+        let canvas = new Canvas(250, 350)
+        let ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#313338'
+        ctx.fillRect(0, 0, 250, 350)
+        ctx.drawImage(image, 0, 30 * i, 250, 350)
+        ctx.beginPath()
+        ctx.moveTo(0, 197 + 30 * i)
+        ctx.lineTo(250, 197 + 30 * i)
+        ctx.lineTo(250, 0)
+        ctx.lineTo(0, 0)
+        ctx.clip()
+        if (i != 0) ctx.drawImage(image2, 55 - (55 / 7) * (i + 1), 197 - (197 / 7) * (i + 1), 144 + ((250 - 144) / 7) * (i + 1), 202 + ((350 - 202) / 7) * (i + 1))
+        //@ts-ignore
+        encoder.addFrame(ctx)
+        //if (i == 0) encoder.setDelay(50)
+        console.log(Date.now()-start)
+    }
+    encoder.finish()
+    fs.writeFileSync('./test.gif', encoder.out.getData())
+}
+openChestGif()
+//createCatalog(0)
 //fs.readdir('./assets/images/tradecards/backgrounds', (err, files) => {console.log(files)})
 //listCards()
-createCard('https://moparblog.com/wp-content/uploads/2013/07/George-Washington-Dodge-Challenger.jpg', 3, [150, (1400 * scale - 1400) / 2], scale, 'h', true)
+//createCard('https://moparblog.com/wp-content/uploads/2013/07/George-Washington-Dodge-Challenger.jpg', 3, [150, (1400 * scale - 1400) / 2], scale, 'h', true)
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA

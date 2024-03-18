@@ -3,6 +3,10 @@ import path from 'path'
 import { ActionRow, ActionRowBuilder, AnyComponentBuilder, ComponentType, EmbedBuilder, Message, MessageActionRowComponent, MessageActionRowComponentBuilder, StringSelectMenuBuilder, StringSelectMenuComponent, StringSelectMenuInteraction, TextChannel } from "discord.js";
 import { RgbPixel } from "quantize";
 import EventEmitter from 'events';
+import fs from 'fs'
+import { randomInt } from "crypto"
+import { GetFile, TradecardManifest } from "./data";
+import GIFEncoder from "gifencoder";
 var quantize = require('quantize');
 const startChance = 0.01
 export let maps = {
@@ -496,4 +500,108 @@ export class ContextUtilities {
         this.context.closePath()
         return this
     }
+}
+//
+// Trading Card Game Utilities
+//
+export function cardDraw(guarantee: boolean) {
+    let cards = GetFile.tradecardManifest().cards
+    cards = cards.sort(() => Math.random() - 0.5);
+    let weightTotal = cards.reduce((acc, card) => acc + (card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2), 0)
+    let threshold = randomInt(0, weightTotal)
+    let card;
+    if (guarantee || randomInt(0, 100) < 10) {
+        for (let card of cards) {
+            threshold -= card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2
+            if (threshold <= 0) return card
+        }
+    }
+    return card
+}
+export async function addFrame(source: string | Canvas, rank: number, scale = 1) {
+    let canvas = new Canvas(1000 * scale, 1400 * scale)
+    let ctx = canvas.getContext('2d');
+    let sourceImage
+    if (source instanceof Canvas) sourceImage = source
+    else {
+        try {
+            sourceImage = await loadImage(source)
+        } catch (error) {
+            sourceImage = await loadImage(GetFile.assets + "/images/tradecards/backgrounds/default.png")
+        }
+    }
+    let frame
+    if (rank == 1 || rank == 2 || rank == 3) frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
+    else frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
+    ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale)
+    ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale)
+    return canvas;
+}
+export async function createCatalog(id: number) {
+    let data: TradecardManifest = require(GetFile.assets + '/images/tradecards/manifest.json')
+    let cards = data.cards
+    let catalog = data.collections.find(c => c.id == id)
+    if (catalog && catalog.background) {
+        let catalogCards = []
+        let cardvas = new Canvas(1250 + 80, Math.ceil(cards.length / 5) * (370))
+        let cardctx = cardvas.getContext('2d')
+        for (let i = 0; i < catalog.cards.length; i++) {
+            const card = cards.find(c => c.id == (catalog as { cards: number[] }).cards[i])
+            if (card) catalogCards.push(card)
+        }
+        catalogCards.sort((b, a) => a.rank - b.rank)
+        for (let i = 0; i < catalogCards.length; i++) {
+            const card = catalogCards[i]
+            if (card) {
+                let image = await addFrame(GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25)
+                cardctx.drawImage(image, (i % 5) * (270), Math.floor(i / 5) * (370), 250, 350)
+            }
+        }
+        let catalogcanvas = new Canvas(1530, 2180)
+        let catalogctx = catalogcanvas.getContext('2d')
+        let background = await loadImage(GetFile.assets + `/images/tradecards/catalogs/${catalog.background}`)
+        catalogctx.drawImage(background, 0, 0, 1530, 2180)
+        catalogctx.drawImage(cardvas, 40, 560, 1450, 2000)
+        cardctx.drawImage(background, 0, 0,)
+        return catalogcanvas
+    }
+}
+export async function openChestGif(background: string,rank:number) {
+    let encoder = new GIFEncoder(250,350)
+    encoder.setDelay(50)
+    encoder.setRepeat(-1)
+    encoder.start()
+    let frames = fs.readdirSync(GetFile.assets + '/images/tradecards/chestgif')
+    console.log(frames)
+    for (let i = 0; i < 25; i++) {
+        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/1.gif')
+        let canvas = new Canvas(250, 350)
+        let ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#313338'
+        ctx.fillRect(0, 0, 250, 350)
+        ctx.drawImage(image, Math.round(randomInt(i+1)-(i+1)/2), Math.round(randomInt(i+1)-(i+1)/2), 250, 350)
+        //@ts-ignore
+        encoder.addFrame(ctx)
+    }
+    for (let i = 0; i < frames.length; i++) {
+        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/' + frames[i])
+        let image2 = await addFrame(GetFile.assets+'/images/tradecards/backgrounds/'+background, rank)
+        let canvas = new Canvas(250, 350)
+        let ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#313338'
+        ctx.fillRect(0, 0, 250, 350)
+        ctx.drawImage(image, 0, 30*i, 250, 350)
+        ctx.beginPath()
+        ctx.moveTo(0, 197+30*i)
+        ctx.lineTo(250,197+30*i)
+        ctx.lineTo(250,0)
+        ctx.lineTo(0,0)
+        ctx.clip()
+        if (i!=0) ctx.drawImage(image2,55-(55/7)*(i+1), 197-(197/7)*(i+1), 144+((250-144)/7)*(i+1), 202+((350-202)/7)*(i+1))
+        //@ts-ignore
+        encoder.addFrame(ctx)
+        //if (i == 0) encoder.setDelay(50)
+    }
+    encoder.finish()
+    return encoder.out.getData()
 }

@@ -1,8 +1,24 @@
 import fs from 'fs'
 import path from 'path'
 import EventEmitter from 'events';
-import { AnyComponent, AnySelectMenuInteraction, CacheType, CollectedInteraction, Collector, InteractionCollector } from 'discord.js';
-const dataPath = path.join(__dirname, '../assets/stored/data.json')
+import { AnyComponent, AnySelectMenuInteraction, AttachmentBuilder, CacheType, Client, CollectedInteraction, Collector, ComponentType, InteractionCollector, StringSelectMenuInteraction, TextChannel } from 'discord.js';
+import { EmbedBuilder, StringSelectMenuBuilder } from '@discordjs/builders';
+import { addFrame } from './utilities';
+export class GetFile {
+    static assets = path.join(__dirname, '../assets')
+    static namecardPath = this.assets + '/images/namecards/manifest.json'
+    static tradecardPath = this.assets + "/images/tradecards/manifest.json"
+    static serverPath = this.assets + "/stored/data.json"
+    static namecardManifest = (): namecardManifest => {
+        return require(this.namecardPath)
+    }
+    static tradecardManifest = (): TradecardManifest => {
+        return require(this.tradecardPath)
+    }
+    static serverData = (): CacheData => {
+        return require(this.serverPath)
+    }
+}
 export class eventEmitter extends EventEmitter {
     constructor() {
         super()
@@ -26,11 +42,11 @@ export class DataManager {
     constructor() {
         this.cacheData = this.get()
     }
-    get = () => {
-        return require(dataPath)
+    get = (): CacheData => {
+        return GetFile.serverData()
     }
     write = () => {
-        return fs.writeFileSync(dataPath, JSON.stringify(this.cacheData))
+        return fs.writeFileSync(GetFile.serverPath, JSON.stringify(this.cacheData))
     }
     listFiles = () => {
         return fs.readdirSync('./assets/stored')
@@ -114,7 +130,7 @@ export class DataManager {
     }
 }
 export class MessageManager {
-    static getMessage(messagePath: string, args: (string|number)[]) {
+    static getMessage(messagePath: string, args: (string | number)[]) {
         let Messages = require('../assets/messages.json')
         let path = messagePath.split('.')
         for (let i = 0; i < path.length; i++) {
@@ -168,9 +184,11 @@ export class Guild {
     }
 }
 export class GuildManager {
+    readonly id: string
     guild: Guild
     members: GuildMember[]
     constructor(guild: Guild) {
+        this.id = guild.id
         this.guild = guild
         this.members = guild.members
     }
@@ -194,6 +212,13 @@ export class GuildManager {
             return member
         }
         return this.addMember(id)
+    }
+    getMemberManager = (id: string) => {
+        let member = this.guild.members.find(member => member.id == id)
+        if (member) {
+            return new GuildMemberManager(member)
+        }
+        return new GuildMemberManager(this.addMember(id))
     }
     // Guild Global XP
     addXP = (xp: number) => {
@@ -417,11 +442,11 @@ export class GuildMemberManager extends BaseUserManager {
         }
     }
     // Balance Updates
-    addXP = (xp: number,channel?:string) => {
+    addXP = (xp: number, channel?: string) => {
         const oldLevel = this.getLevel()
         this.user.xp += xp
         const newLevel = this.getLevel()
-        if (oldLevel < newLevel&&channel) emitter.levelUp(this.member.id, channel);
+        if (oldLevel < newLevel && channel) emitter.levelUp(this.member.id, channel);
         return this.user.xp
     }
     addWallet = (num: number) => {
@@ -490,9 +515,9 @@ export class GuildMemberManager extends BaseUserManager {
     }
 }
 export class CollectorManager {
-    collector: {collector: InteractionCollector<CollectedInteraction>,tag: string}[] = []
-    add = (collector: InteractionCollector<CollectedInteraction>,tag:string) => {
-        this.collector.push({collector: collector,tag: tag})
+    collector: { collector: InteractionCollector<CollectedInteraction>, tag: string }[] = []
+    add = (collector: InteractionCollector<CollectedInteraction>, tag: string) => {
+        this.collector.push({ collector: collector, tag: tag })
     }
     remove = (collector: InteractionCollector<CollectedInteraction>) => {
         let index = this.collector.findIndex(col => col.collector == collector)
@@ -516,14 +541,106 @@ export class StatManager {
     }
 
 }
-export class manifest {
-    namecards:{
-        "name":string,
-        "path":string,
-        "cost":number
+export class namecardManifest {
+    namecards: {
+        "name": string,
+        "path": string,
+        "cost": number
     }[]
     constructor() {
         this.namecards = []
+    }
+}
+export type TradecardManifest = {
+    cards: {
+        id: number,
+        title: string,
+        rank: number,
+        description: string,
+        background: string
+    }[],
+    collections: {
+        id: number,
+        title: string,
+        cards: number[],
+        background: undefined | string
+    }[]
+}
+export class MessageStorageManager {
+    cache: { guilds: { id: string, messages: { id: string, channel: string, intent: string }[] }[] } = require(GetFile.assets + '/stored/messages.json')
+    client: Client
+    constructor(client: Client) {
+        this.client = client
+        this.init()
+    }
+    write() {
+        fs.writeFileSync(GetFile.assets + '/stored/messages.json', JSON.stringify(this.cache))
+    }
+    async init() {
+        for (let guild of this.cache.guilds) {
+            for (let message of guild.messages) {
+                this.startCollection(guild.id, message.channel, message.id)
+            }   
+        }
+    }
+    async registerMessage(guildID:string,channelID:string,messageID:string) {
+        let guild = this.cache.guilds.find(guild => guild.id == guildID)
+        if (guild) {
+            guild.messages.push({id:messageID,channel:channelID,intent:''})
+        } else {
+            this.cache.guilds.push({id:guildID,messages:[{id:messageID,channel:channelID,intent:''}]})
+        }
+        this.write()
+        this.startCollection(guildID,channelID,messageID)
+    }
+    async startCollection(guildID:string,channelID:string,messageID:string) {
+        let guild = this.cache.guilds.find(guild => guild.id == guildID)
+        if (guild) {
+            let storedmessage = guild.messages.find(message => message.id == messageID)
+            if (storedmessage) {
+                let Dguild = this.client.guilds.cache.get(guildID)
+                if (!Dguild) return;
+                let channel = Dguild.channels.cache.get(channelID)
+                if (channel instanceof TextChannel) {
+                    let message = await channel.messages.fetch(messageID)
+                    let intent = storedmessage.intent
+                    if (intent.startsWith('catalog')) {
+                        let id = intent.slice(7, intent.length)
+                        let card = GetFile.tradecardManifest().collections.find(collection => collection.id == parseInt(id))
+                        let collector = message.createMessageComponentCollector({componentType:ComponentType.StringSelect})
+                        collector.on('collect', async (interaction: StringSelectMenuInteraction) => {
+                            let card = GetFile.tradecardManifest().cards.find(card => card.id == parseInt(interaction.values[0]))
+                            if (card) {
+                                let attachment = new AttachmentBuilder((await addFrame(card.background, card.rank)).toBuffer(),{name:'card.png'})
+                                let infoEmbed = new EmbedBuilder()
+                                .setTitle(card.title)
+                                .setDescription(card.description)
+                                .setImage("attachment://card.png")
+                                //@ts-ignore
+                                .setColor("Green")
+
+                                interaction.reply({embeds:[infoEmbed],files:[attachment],ephemeral:true})
+                                setTimeout(() => {
+                                    interaction.deleteReply()
+                                }, 20000);
+                            }
+                        })
+                    }
+                } else {
+                    guild.messages.splice(guild.messages.indexOf(storedmessage),1)  
+                }
+            }
+        }
+    }
+    get(guildID: string, messageID: string) {
+        let guild = this.cache.guilds.find(guild => guild.id == guildID)
+        if (guild) {
+            let message = guild.messages.find(message => message.id == messageID)
+            if (message) {
+                return message
+            }
+        }
+        return false
     }
 }
 // Initialize Data
