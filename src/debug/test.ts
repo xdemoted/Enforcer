@@ -303,9 +303,9 @@ async function addFrame(source: string | Canvas, rank: number, scale = 1) {
 }
 async function createCard(source: string, rank: number, translation: [number, number] = [0, 0], scale: number = 1, mode: 'h' | 'w' = 'h', mark?: boolean) {
     let canvas = await autoScaleCardBackground(source, translation, scale, mode, mark)
-    fs.writeFileSync('../newCards/noframe.png', canvas.toBuffer());
+    fs.writeFileSync('./noframe.png', canvas.toBuffer());
     let frame = await addFrame(canvas, rank, scale);
-    fs.writeFileSync('../newCards/withframe.png', frame.toBuffer());
+    fs.writeFileSync('./withframe.png', frame.toBuffer());
     return frame
 }
 async function listCards() {
@@ -449,6 +449,6 @@ openChestGif()
 //createCatalog(0)
 //fs.readdir('./assets/images/tradecards/backgrounds', (err, files) => {console.log(files)})
 //listCards()
-//createCard('https://moparblog.com/wp-content/uploads/2013/07/George-Washington-Dodge-Challenger.jpg', 3, [150, (1400 * scale - 1400) / 2], scale, 'h', true)
+createCard('https://images.wallpapersden.com/image/download/godzilla_bGtqamqUmZqaraWkpJRmbmdlrWZnZWU.jpg', 3, [50, (1400 * scale - 1400) / 2], scale, 'h', false)
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA

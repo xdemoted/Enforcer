@@ -146,6 +146,13 @@
             "rank": 2,
             "description": "The Dodge Challenger associated with George Washington is a legendary vehicle that has become part of American folklore. It is often described as a powerful, freedom-loving muscle car that roared through the streets during the American Revolutionary War.",
             "background": "george_washington_dodge_challenger.png"
+        },
+        {
+            "id": 22,
+            "title": "Godzilla",
+            "rank": 2,
+            "description": "A giant, prehistoric sea monster that is often depicted as a destructive force of nature. Godzilla has appeared in numerous films and is a popular icon of Japanese pop culture.",
+            "background": "godzilla.png"
         }
     ],
     "collections": [
@@ -180,7 +187,8 @@
             "id": 1,
             "title": "Independent",
             "cards": [
-                21
+                21,
+                22
             ]
         }
     ]

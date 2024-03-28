@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
+exports.getNamecard = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
 const canvas_1 = require("canvas");
 const path_1 = __importDefault(require("path"));
 const discord_js_1 = require("discord.js");
@@ -238,8 +238,8 @@ function generateEquation(map) {
     return [string, finalSolution];
 }
 exports.generateEquation = generateEquation;
-function createBackgroundImage(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
+function createBackgroundImage(url, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution);
@@ -261,8 +261,8 @@ function createBackgroundImage(url_1) {
         return canvas;
     });
 }
-function createTemplate(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
+function createTemplate(url, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         let palette = yield getPalette(url);
@@ -291,8 +291,8 @@ function createTemplate(url_1) {
         return canvas;
     });
 }
-function createNameCard(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
+function createNameCard(url, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         //try {
         //    await loadImage(url)
         //} catch (error) {
@@ -550,7 +550,7 @@ function cardDraw(guarantee) {
     let weightTotal = cards.reduce((acc, card) => acc + (card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2), 0);
     let threshold = (0, crypto_1.randomInt)(0, weightTotal);
     let card;
-    if (guarantee || (0, crypto_1.randomInt)(0, 100) < 10) {
+    if (guarantee || (0, crypto_1.randomInt)(0, 100) < 5) {
         for (let card of cards) {
             threshold -= card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2;
             if (threshold <= 0)
@@ -560,8 +560,8 @@ function cardDraw(guarantee) {
     return card;
 }
 exports.cardDraw = cardDraw;
-function addFrame(source_1, rank_1) {
-    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
+function addFrame(source, rank, scale = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -586,36 +586,36 @@ function addFrame(source_1, rank_1) {
     });
 }
 exports.addFrame = addFrame;
-function createCatalog(id) {
+function createCatalog(cards, background) {
     return __awaiter(this, void 0, void 0, function* () {
         let data = require(data_1.GetFile.assets + '/images/tradecards/manifest.json');
-        let cards = data.cards;
-        let catalog = data.collections.find(c => c.id == id);
-        if (catalog && catalog.background) {
-            let catalogCards = [];
-            let cardvas = new canvas_1.Canvas(1250 + 80, Math.ceil(cards.length / 5) * (370));
-            let cardctx = cardvas.getContext('2d');
-            for (let i = 0; i < catalog.cards.length; i++) {
-                const card = cards.find(c => c.id == catalog.cards[i]);
-                if (card)
-                    catalogCards.push(card);
+        let allCards = data.cards;
+        let catalogCards = [];
+        let cardvas = new canvas_1.Canvas(1250 + 80, Math.ceil(cards.length / 5) * (370));
+        let cardctx = cardvas.getContext('2d');
+        for (let i = 0; i < cards.length; i++) {
+            const card = allCards.find(c => c.id == cards[i]);
+            if (card)
+                catalogCards.push(card);
+        }
+        catalogCards.sort((b, a) => a.rank - b.rank);
+        for (let i = 0; i < catalogCards.length; i++) {
+            const card = catalogCards[i];
+            if (card) {
+                let image = yield addFrame(data_1.GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25);
+                cardctx.drawImage(image, (i % 5) * (270), Math.floor(i / 5) * (370), 250, 350);
             }
-            catalogCards.sort((b, a) => a.rank - b.rank);
-            for (let i = 0; i < catalogCards.length; i++) {
-                const card = catalogCards[i];
-                if (card) {
-                    let image = yield addFrame(data_1.GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25);
-                    cardctx.drawImage(image, (i % 5) * (270), Math.floor(i / 5) * (370), 250, 350);
-                }
-            }
-            let catalogcanvas = new canvas_1.Canvas(1530, 2180);
-            let catalogctx = catalogcanvas.getContext('2d');
-            let background = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + `/images/tradecards/catalogs/${catalog.background}`);
-            catalogctx.drawImage(background, 0, 0, 1530, 2180);
-            catalogctx.drawImage(cardvas, 40, 560, 1450, 2000);
-            cardctx.drawImage(background, 0, 0);
+        }
+        let catalogcanvas = new canvas_1.Canvas(1530, 2180);
+        let catalogctx = catalogcanvas.getContext('2d');
+        if (background) {
+            let catalogBackground = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + `/images/tradecards/catalogs/${background}`);
+            catalogctx.drawImage(catalogBackground, 0, 0, 1530, 2180);
+            catalogctx.drawImage(cardvas, 40, 560, 1450, (1450 / cardvas.width) * cardvas.height);
+            cardctx.drawImage(catalogBackground, 0, 0);
             return catalogcanvas;
         }
+        return cardvas;
     });
 }
 exports.createCatalog = createCatalog;
@@ -662,3 +662,67 @@ function openChestGif(background, rank) {
     });
 }
 exports.openChestGif = openChestGif;
+function getLeaderCard(users, resolution = 1, data) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let canvas = new canvas_1.Canvas(2450 * resolution, 1925 * resolution);
+        let context = canvas.getContext('2d');
+        for (let i = 0; i < users.length; i++) {
+            context.drawImage(yield getNamecard(users[i], data, i + 1, resolution), Math.floor(i / 6) * 1250 * resolution, (i % 6) * 325 * resolution, 1200 * resolution, 300 * resolution);
+        }
+        return canvas;
+    });
+}
+exports.getLeaderCard = getLeaderCard;
+function getNamecard(gUser, data, rank, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let user;
+        let gUser2;
+        if (gUser instanceof discord_js_1.User) {
+            user = new data_1.UserManager(data.getUser(gUser.id));
+            gUser2 = data.getUser(gUser.id);
+        }
+        else {
+            user = new data_1.GuildMemberManager(data.getGuildManager(gUser.guild.id).getMember(gUser.id));
+            gUser2 = user.getGlobalUser();
+        }
+        let userLevel = user.getLevel();
+        const avatarURL = gUser.displayAvatarURL({ extension: 'png' });
+        const lastRequirement = (userLevel > 1) ? data_1.DataManager.getLevelRequirement(userLevel - 1) : 0;
+        const requirement = data_1.DataManager.getLevelRequirement(userLevel);
+        let hexColor = (gUser instanceof discord_js_1.GuildMember && gUser.displayHexColor != '#000000') ? gUser.displayHexColor : '#00EDFF';
+        let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
+        let context = canvas.getContext('2d');
+        context.fillStyle = hexColor;
+        context.drawImage(yield (0, canvas_1.loadImage)((yield createNameCard(gUser2.namecard)).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
+        context.globalCompositeOperation = 'destination-over';
+        // Avatar PFP
+        let avatarCanvas = new canvas_1.Canvas(260 * resolution, 260 * resolution);
+        let avatarContext = avatarCanvas.getContext('2d');
+        avatarContext.arc(130 * resolution, 130 * resolution, 130 * resolution, 0, Math.PI * 2, true);
+        avatarContext.fill();
+        avatarContext.globalCompositeOperation = 'source-in';
+        avatarContext.drawImage(yield (0, canvas_1.loadImage)(avatarURL ? avatarURL + "?size=1024" : './build/assets/images/namecards/namecard.png'), 0, 0, 260 * resolution, 260 * resolution);
+        context.drawImage(yield (0, canvas_1.loadImage)(avatarCanvas.toBuffer()), 20 * resolution, 20 * resolution, 260 * resolution, 260 * resolution);
+        // Background
+        let percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700 * resolution);
+        context.fillRect(325 * resolution, 200 * resolution, percent, 50 * resolution);
+        context.globalCompositeOperation = 'source-over';
+        context.font = `${40 * resolution}px Segmento`;
+        context.fillText(gUser.displayName.slice(0, 15), 325 * resolution, 180 * resolution);
+        context.fillStyle = '#ffffff';
+        context.fillText(`Rank #${rank ? rank : user.getRank()}`, 325 * resolution, 60 * resolution);
+        context.fillStyle = hexColor;
+        context.font = `${30 * resolution}px Segmento`;
+        let wid = context.measureText(`Level`).width;
+        context.font = `${40 * resolution}px Segmento`;
+        let wid2 = context.measureText(user.getLevel().toString()).width;
+        context.fillText(user.getLevel().toString(), (1100 - (wid2)) * resolution, 75 * resolution);
+        context.font = `${30 * resolution}px Segmento`;
+        context.fillText(`Level`, (1100 - (wid2 + wid)) * resolution, 75 * resolution);
+        wid = context.measureText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`).width;
+        context.fillStyle = '#ffffff';
+        context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
+        return canvas;
+    });
+}
+exports.getNamecard = getNamecard;

@@ -1,14 +1,16 @@
 import fs from 'fs'
 import path from 'path'
 import EventEmitter from 'events';
-import { AnyComponent, AnySelectMenuInteraction, AttachmentBuilder, CacheType, Client, CollectedInteraction, Collector, ComponentType, InteractionCollector, StringSelectMenuInteraction, TextChannel } from 'discord.js';
-import { EmbedBuilder, StringSelectMenuBuilder } from '@discordjs/builders';
+import { AttachmentBuilder, Client, CollectedInteraction, ComponentType, InteractionCollector, StringSelectMenuInteraction, TextChannel } from 'discord.js';
+import { EmbedBuilder } from '@discordjs/builders';
 import { addFrame } from './utilities';
 export class GetFile {
     static assets = path.join(__dirname, '../assets')
     static namecardPath = this.assets + '/images/namecards/manifest.json'
     static tradecardPath = this.assets + "/images/tradecards/manifest.json"
     static serverPath = this.assets + "/stored/data.json"
+    static commandPath = path.join(__dirname, './commands')
+    static gamePath = path.join(__dirname, './games')
     static namecardManifest = (): namecardManifest => {
         return require(this.namecardPath)
     }
@@ -106,15 +108,17 @@ export class DataManager {
         if (data.users == undefined) {
             data.users = []
         } else {
-            data.users.forEach(user => {
-                user = Object.assign(new GlobalUser(user.id), user)
-            })
+            for (let i = 0; i < data.users.length; i++) {
+                data.users[i] = Object.assign(new GlobalUser(data.users[i].id), data.users[i])
+                data.users[i].xp = Math.round(data.users[i].xp)
+            }
         }
         data.guilds.forEach(guild => {
             if (guild.members == undefined) {
                 guild.members = []
             } else {
                 guild.members.forEach(member => {
+                    member.xp = Math.round(member.xp)
                     member = Object.assign(new GuildMember(member.id, guild.id), member)
                 })
             }
@@ -290,7 +294,7 @@ export class GlobalUser extends BaseUser {
     namecard: string
     gems: number
     inventory: {
-        cards: string[]
+        cards: number[]
     }
     constructor(id: string) {
         super(id)
@@ -417,6 +421,17 @@ export class UserManager extends BaseUserManager {
     setNamecard = (url: string) => {
         this.user.namecard = url
         return this.user.namecard
+    }
+    getCards = () => {
+        return this.user.inventory.cards
+    }
+    addCard = (card:number) => {
+        this.user.inventory.cards.push(card)
+        return this.user.inventory.cards
+    }
+    removeCard = (card:number) => {
+        this.user.inventory.cards.splice(this.user.inventory.cards.indexOf(card),1)
+        return this.user.inventory.cards
     }
 }
 export class GuildMemberManager extends BaseUserManager {
@@ -645,4 +660,6 @@ export class MessageStorageManager {
 }
 // Initialize Data
 let data = new DataManager()
+let someProperty = 'someValue'
+export { data }
 export default data

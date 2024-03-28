@@ -1,13 +1,25 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MessageStorageManager = exports.namecardManifest = exports.StatManager = exports.CollectorManager = exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.stats = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.MessageManager = exports.DataManager = exports.CacheData = exports.eventEmitter = exports.GetFile = void 0;
+exports.data = exports.MessageStorageManager = exports.namecardManifest = exports.StatManager = exports.CollectorManager = exports.GuildMemberManager = exports.UserManager = exports.BaseUserManager = exports.GuildMember = exports.GlobalUser = exports.BaseUser = exports.stats = exports.GuildManager = exports.Guild = exports.GuildSettings = exports.MessageManager = exports.DataManager = exports.CacheData = exports.eventEmitter = exports.GetFile = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const events_1 = __importDefault(require("events"));
+const discord_js_1 = require("discord.js");
+const builders_1 = require("@discordjs/builders");
+const utilities_1 = require("./utilities");
 class GetFile {
 }
 exports.GetFile = GetFile;
@@ -16,6 +28,8 @@ GetFile.assets = path_1.default.join(__dirname, '../assets');
 GetFile.namecardPath = _a.assets + '/images/namecards/manifest.json';
 GetFile.tradecardPath = _a.assets + "/images/tradecards/manifest.json";
 GetFile.serverPath = _a.assets + "/stored/data.json";
+GetFile.commandPath = path_1.default.join(__dirname, './commands');
+GetFile.gamePath = path_1.default.join(__dirname, './games');
 GetFile.namecardManifest = () => {
     return require(_a.namecardPath);
 };
@@ -112,9 +126,10 @@ class DataManager {
             data.users = [];
         }
         else {
-            data.users.forEach(user => {
-                user = Object.assign(new GlobalUser(user.id), user);
-            });
+            for (let i = 0; i < data.users.length; i++) {
+                data.users[i] = Object.assign(new GlobalUser(data.users[i].id), data.users[i]);
+                data.users[i].xp = Math.round(data.users[i].xp);
+            }
         }
         data.guilds.forEach(guild => {
             if (guild.members == undefined) {
@@ -122,6 +137,7 @@ class DataManager {
             }
             else {
                 guild.members.forEach(member => {
+                    member.xp = Math.round(member.xp);
                     member = Object.assign(new GuildMember(member.id, guild.id), member);
                 });
             }
@@ -385,6 +401,17 @@ class UserManager extends BaseUserManager {
             this.user.namecard = url;
             return this.user.namecard;
         };
+        this.getCards = () => {
+            return this.user.inventory.cards;
+        };
+        this.addCard = (card) => {
+            this.user.inventory.cards.push(card);
+            return this.user.inventory.cards;
+        };
+        this.removeCard = (card) => {
+            this.user.inventory.cards.splice(this.user.inventory.cards.indexOf(card), 1);
+            return this.user.inventory.cards;
+        };
         this.user = user;
     }
     getRank() {
@@ -530,21 +557,75 @@ exports.namecardManifest = namecardManifest;
 class MessageStorageManager {
     constructor(client) {
         this.cache = require(GetFile.assets + '/stored/messages.json');
-        for (let guild of this.cache.guilds) {
-            let Dguild = client.guilds.cache.get(guild.id);
-            if (!Dguild)
-                return;
-            for (let message of guild.messages) {
-                let channel = Dguild.channels.cache.get(message.channel);
-                if (!channel)
-                    guild.messages.splice(guild.messages.indexOf(message), 1);
-                let intent = message.intent;
-                if (intent.startsWith('catalog')) {
-                    let id = intent.slice(7, intent.length);
-                    console.log(id);
+        this.client = client;
+        this.init();
+    }
+    write() {
+        fs_1.default.writeFileSync(GetFile.assets + '/stored/messages.json', JSON.stringify(this.cache));
+    }
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            for (let guild of this.cache.guilds) {
+                for (let message of guild.messages) {
+                    this.startCollection(guild.id, message.channel, message.id);
                 }
             }
-        }
+        });
+    }
+    registerMessage(guildID, channelID, messageID) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let guild = this.cache.guilds.find(guild => guild.id == guildID);
+            if (guild) {
+                guild.messages.push({ id: messageID, channel: channelID, intent: '' });
+            }
+            else {
+                this.cache.guilds.push({ id: guildID, messages: [{ id: messageID, channel: channelID, intent: '' }] });
+            }
+            this.write();
+            this.startCollection(guildID, channelID, messageID);
+        });
+    }
+    startCollection(guildID, channelID, messageID) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let guild = this.cache.guilds.find(guild => guild.id == guildID);
+            if (guild) {
+                let storedmessage = guild.messages.find(message => message.id == messageID);
+                if (storedmessage) {
+                    let Dguild = this.client.guilds.cache.get(guildID);
+                    if (!Dguild)
+                        return;
+                    let channel = Dguild.channels.cache.get(channelID);
+                    if (channel instanceof discord_js_1.TextChannel) {
+                        let message = yield channel.messages.fetch(messageID);
+                        let intent = storedmessage.intent;
+                        if (intent.startsWith('catalog')) {
+                            let id = intent.slice(7, intent.length);
+                            let card = GetFile.tradecardManifest().collections.find(collection => collection.id == parseInt(id));
+                            let collector = message.createMessageComponentCollector({ componentType: discord_js_1.ComponentType.StringSelect });
+                            collector.on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
+                                let card = GetFile.tradecardManifest().cards.find(card => card.id == parseInt(interaction.values[0]));
+                                if (card) {
+                                    let attachment = new discord_js_1.AttachmentBuilder((yield (0, utilities_1.addFrame)(card.background, card.rank)).toBuffer(), { name: 'card.png' });
+                                    let infoEmbed = new builders_1.EmbedBuilder()
+                                        .setTitle(card.title)
+                                        .setDescription(card.description)
+                                        .setImage("attachment://card.png")
+                                        //@ts-ignore
+                                        .setColor("Green");
+                                    interaction.reply({ embeds: [infoEmbed], files: [attachment], ephemeral: true });
+                                    setTimeout(() => {
+                                        interaction.deleteReply();
+                                    }, 20000);
+                                }
+                            }));
+                        }
+                    }
+                    else {
+                        guild.messages.splice(guild.messages.indexOf(storedmessage), 1);
+                    }
+                }
+            }
+        });
     }
     get(guildID, messageID) {
         let guild = this.cache.guilds.find(guild => guild.id == guildID);
@@ -560,4 +641,6 @@ class MessageStorageManager {
 exports.MessageStorageManager = MessageStorageManager;
 // Initialize Data
 let data = new DataManager();
+exports.data = data;
+let someProperty = 'someValue';
 exports.default = data;

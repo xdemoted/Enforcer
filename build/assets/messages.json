@@ -8,7 +8,7 @@
         },
         "dailyqb": {
             "correct": "<@{0}> answered correctly! Received {1} xp, {2} coins, and {3} gems.",
-            "incorrect": "<@{0}> answered incorrectly! Received {1} xp. The correct answer was {2}. \n You can try again in 5 minutes."
+            "incorrect": "<@{0}> answered incorrectly! Received {1} xp.\nYou can try again in 5 minutes."
         }
     }
 }

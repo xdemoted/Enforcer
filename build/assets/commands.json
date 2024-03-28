@@ -4,6 +4,10 @@
         "description": "Setup a server's settings"
     },
     {
+        "name": "catalog",
+        "description": "Scroll through the catalogs that currently exist."
+    },
+    {
         "name": "answer",
         "description": "Use during a quizbowl match to answer a question",
         "options": [

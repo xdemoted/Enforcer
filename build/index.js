@@ -14,7 +14,7 @@ let { fork } = require('child_process');
 let path = require('path');
 let file = path.resolve('./build/main');
 let { Partials, Client, EmbedBuilder } = require('discord.js');
-const mainChannel = '1195048388643791000';
+const mainChannel = '1222952464786128987';
 const client = new Client({ partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.GuildMember, Partials.User], intents: 131071 });
 let channel;
 let message;

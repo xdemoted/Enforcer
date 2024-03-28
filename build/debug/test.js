@@ -281,8 +281,8 @@ function testCard() {
         fs.writeFileSync('../testFrame.png', canvas.toBuffer());
     });
 }
-function autoScaleCardBackground() {
-    return __awaiter(this, arguments, void 0, function* (url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = 1, mode = 'h', mark) {
+function autoScaleCardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = 1, mode = 'h', mark) {
+    return __awaiter(this, void 0, void 0, function* () {
         if (mode == 'h') {
             let image = yield (0, canvas_1.loadImage)(url);
             let scaled = 1400 / image.height * scale;
@@ -295,8 +295,8 @@ function autoScaleCardBackground() {
         }
     });
 }
-function cardBackground() {
-    return __awaiter(this, arguments, void 0, function* (url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = [1, 1], mark) {
+function cardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = [1, 1], mark) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1000, 1400);
         let ctx = canvas.getContext('2d');
         let image = yield (0, canvas_1.loadImage)(url);
@@ -342,8 +342,8 @@ function cardBackground() {
         return canvas;
     });
 }
-function addFrame(source_1, rank_1) {
-    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
+function addFrame(source, rank, scale = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -367,12 +367,12 @@ function addFrame(source_1, rank_1) {
         return canvas;
     });
 }
-function createCard(source_1, rank_1) {
-    return __awaiter(this, arguments, void 0, function* (source, rank, translation = [0, 0], scale = 1, mode = 'h', mark) {
+function createCard(source, rank, translation = [0, 0], scale = 1, mode = 'h', mark) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = yield autoScaleCardBackground(source, translation, scale, mode, mark);
-        fs.writeFileSync('../newCards/noframe.png', canvas.toBuffer());
+        fs.writeFileSync('./noframe.png', canvas.toBuffer());
         let frame = yield addFrame(canvas, rank, scale);
-        fs.writeFileSync('../newCards/withframe.png', frame.toBuffer());
+        fs.writeFileSync('./withframe.png', frame.toBuffer());
         return frame;
     });
 }
@@ -531,6 +531,6 @@ openChestGif();
 //createCatalog(0)
 //fs.readdir('./assets/images/tradecards/backgrounds', (err, files) => {console.log(files)})
 //listCards()
-//createCard('https://moparblog.com/wp-content/uploads/2013/07/George-Washington-Dodge-Challenger.jpg', 3, [150, (1400 * scale - 1400) / 2], scale, 'h', true)
+createCard('https://images.wallpapersden.com/image/download/godzilla_bGtqamqUmZqaraWkpJRmbmdlrWZnZWU.jpg', 3, [50, (1400 * scale - 1400) / 2], scale, 'h', false);
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA
