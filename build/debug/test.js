@@ -281,8 +281,8 @@ function testCard() {
         fs.writeFileSync('../testFrame.png', canvas.toBuffer());
     });
 }
-function autoScaleCardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = 1, mode = 'h', mark) {
-    return __awaiter(this, void 0, void 0, function* () {
+function autoScaleCardBackground() {
+    return __awaiter(this, arguments, void 0, function* (url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = 1, mode = 'h', mark) {
         if (mode == 'h') {
             let image = yield (0, canvas_1.loadImage)(url);
             let scaled = 1400 / image.height * scale;
@@ -295,8 +295,8 @@ function autoScaleCardBackground(url = data_1.GetFile.assets + '/images/tradecar
         }
     });
 }
-function cardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = [1, 1], mark) {
-    return __awaiter(this, void 0, void 0, function* () {
+function cardBackground() {
+    return __awaiter(this, arguments, void 0, function* (url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = [1, 1], mark) {
         let canvas = new canvas_1.Canvas(1000, 1400);
         let ctx = canvas.getContext('2d');
         let image = yield (0, canvas_1.loadImage)(url);
@@ -342,8 +342,8 @@ function cardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgr
         return canvas;
     });
 }
-function addFrame(source, rank, scale = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function addFrame(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -367,8 +367,8 @@ function addFrame(source, rank, scale = 1) {
         return canvas;
     });
 }
-function createCard(source, rank, translation = [0, 0], scale = 1, mode = 'h', mark) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createCard(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, translation = [0, 0], scale = 1, mode = 'h', mark) {
         let canvas = yield autoScaleCardBackground(source, translation, scale, mode, mark);
         fs.writeFileSync('./noframe.png', canvas.toBuffer());
         let frame = yield addFrame(canvas, rank, scale);
@@ -527,10 +527,47 @@ function openChestGif() {
         fs.writeFileSync('./test.gif', encoder.out.getData());
     });
 }
-openChestGif();
+//openChestGif()
 //createCatalog(0)
 //fs.readdir('./assets/images/tradecards/backgrounds', (err, files) => {console.log(files)})
 //listCards()
-createCard('https://images.wallpapersden.com/image/download/godzilla_bGtqamqUmZqaraWkpJRmbmdlrWZnZWU.jpg', 3, [50, (1400 * scale - 1400) / 2], scale, 'h', false);
+//createCard('https://images.wallpapersden.com/image/download/godzilla_bGtqamqUmZqaraWkpJRmbmdlrWZnZWU.jpg', 3, [50, (1400 * scale - 1400) / 2], scale, 'h', false)
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA
+function createColorText(str) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let left = [];
+        let right = [];
+        let pairs = [];
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] === '(') {
+                left.push(i);
+            }
+            else if (str[i] === ')') {
+                right.push(i);
+                let leftIndex = left.pop();
+                pairs.push([leftIndex ? leftIndex : -1, i, left.length]);
+            }
+        }
+        let canvas = new canvas_1.Canvas(20000, 400);
+        let ctx = canvas.getContext('2d');
+        let colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF'];
+        let fontSize = 40;
+        let y = 50;
+        const width = ctx.measureText('1').width;
+        for (let pair of pairs) {
+            let colorIndex = pair[2] % colors.length;
+            let color = colors[colorIndex];
+            ctx.fillStyle = color;
+            ctx.font = `${fontSize}px Monospace`;
+            let text = str.substring(pair[0] + 1, pair[1]);
+            ctx.fillText(text, pair[0] * width, pair[2] * 50 + 40);
+        }
+        fs.writeFileSync(data_1.GetFile.assets + '/jim.png', canvas.toBuffer());
+    });
+}
+createColorText('((((4*43)/(-25+27))/(44-(17+25)))+((68/2)-(6*5)))+((((6/3)*23)/((16^0.5)/(-18+20)))/(1^2))');
+// (  (  (  (  4  *  4  3  )  /  (  -  2  5  +  2  7  )  )  /  (  4  4  -  (  1  7  +  2  5  )  )  )  +  (  (  6  8  /  2  )  -  (  6  *  5  )  )  )  +  (  (  (  (  6  /  3  )  *  2  3  )  /  (  (  1  6  ^  0  .  5  )  /  (  -  1  8  +  2  0  )  )  )  /  (  1  ^  2  )  )
+// 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89
+//          (  4  *  4  3  )                                   (  4  4  -  (  1  7  +  2  5  )  )
+//       (  (  4  *  4  3  )  /  (  -  2  5  +  2  7  )  )

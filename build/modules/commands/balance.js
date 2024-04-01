@@ -21,8 +21,8 @@ class balance extends commands_1.baseCommand {
         this.serverManager = commandData.serverManager;
     }
     execute(interaction) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             let member = interaction.member;
             if (!(member instanceof discord_js_1.GuildMember))
                 return false;

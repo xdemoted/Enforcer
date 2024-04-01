@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNamecard = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
+exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
 const canvas_1 = require("canvas");
 const path_1 = __importDefault(require("path"));
 const discord_js_1 = require("discord.js");
@@ -238,8 +238,8 @@ function generateEquation(map) {
     return [string, finalSolution];
 }
 exports.generateEquation = generateEquation;
-function createBackgroundImage(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createBackgroundImage(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution);
@@ -261,8 +261,8 @@ function createBackgroundImage(url, resolution = 1) {
         return canvas;
     });
 }
-function createTemplate(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createTemplate(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         let palette = yield getPalette(url);
@@ -291,8 +291,8 @@ function createTemplate(url, resolution = 1) {
         return canvas;
     });
 }
-function createNameCard(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createNameCard(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         //try {
         //    await loadImage(url)
         //} catch (error) {
@@ -560,8 +560,8 @@ function cardDraw(guarantee) {
     return card;
 }
 exports.cardDraw = cardDraw;
-function addFrame(source, rank, scale = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function addFrame(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -662,8 +662,8 @@ function openChestGif(background, rank) {
     });
 }
 exports.openChestGif = openChestGif;
-function getLeaderCard(users, resolution = 1, data) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getLeaderCard(users_1) {
+    return __awaiter(this, arguments, void 0, function* (users, resolution = 1, data) {
         let canvas = new canvas_1.Canvas(2450 * resolution, 1925 * resolution);
         let context = canvas.getContext('2d');
         for (let i = 0; i < users.length; i++) {
@@ -673,8 +673,23 @@ function getLeaderCard(users, resolution = 1, data) {
     });
 }
 exports.getLeaderCard = getLeaderCard;
-function getNamecard(gUser, data, rank, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getWord(length) {
+    const words = data_1.GetFile.wordList();
+    const filteredWords = words.filter(word => word.length === length);
+    let randomWord;
+    if (filteredWords.length > 0) {
+        const randomIndex = Math.floor(Math.random() * filteredWords.length);
+        randomWord = filteredWords[randomIndex];
+    }
+    else {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        randomWord = words[randomIndex];
+    }
+    return randomWord;
+}
+exports.getWord = getWord;
+function getNamecard(gUser_1, data_2, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (gUser, data, rank, resolution = 1) {
         let user;
         let gUser2;
         if (gUser instanceof discord_js_1.User) {

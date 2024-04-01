@@ -23,8 +23,8 @@ class daily extends commands_1.baseCommand {
         this.serverManager = commandData.serverManager;
     }
     execute(interaction) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             let manifest = data_1.GetFile.tradecardManifest();
             let catalogs = manifest.collections;
             let catalogOptions = catalogs.map(catalog => ({

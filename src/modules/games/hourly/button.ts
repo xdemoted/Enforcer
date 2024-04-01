@@ -1,4 +1,4 @@
-import { ActionRow, ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ComponentType, EmbedBuilder, TextChannel } from "discord.js"
+import { ActionRow, ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ComponentType, EmbedBuilder, Message, TextChannel } from "discord.js"
 import { baseGame } from "../../gamemanager"
 import data from "../../data";
 export default class button extends baseGame {
@@ -13,8 +13,8 @@ export default class button extends baseGame {
                     .setLabel(`Don't Touch`)
                     .setStyle(ButtonStyle.Primary)
             );
-        let message = await this.channel.send({ content: 'Its a button, it does things... I think?', components: [row] });
-        this.collector = this.channel.createMessageComponentCollector({ time: 3600000, filter: i => (i.customId === 'click'&&message.id == i.message.id), componentType: ComponentType.Button, });
+        this.message = await this.channel.send({ content: 'Its a button, it does things... I think?', components: [row] });
+        this.collector = this.channel.createMessageComponentCollector({ time: 3600000, filter: i => (i.customId === 'click'&& (this.message as Message).id == i.message.id), componentType: ComponentType.Button, });
         this.collector.on('collect', async i => {
             let outcome = Math.random()
             let guild = data.getGuildManager(i.guildId)
@@ -48,5 +48,6 @@ export default class button extends baseGame {
     }
     end() {
         if (this.collector) this.collector.stop();
+        if (this.message&&this.message.deletable) this.message.delete();
     }
 }

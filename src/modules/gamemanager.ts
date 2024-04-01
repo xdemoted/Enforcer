@@ -3,7 +3,7 @@ import data, { GetFile, MessageManager, eventEmitter } from './data';
 import { cardDraw, openChestGif, random } from './utilities';
 import fs from 'fs'
 import quizbowl from './games/special/quizbowl';
-import { RunTimeEvents } from './RunTimeEvents';
+import { RunTimeEvents, RunTimeEventsDebug } from './RunTimeEvents';
 export type GameValues = { guildId: string, currentValue: string, reward: number, type: number }
 type BaseGameClass = (new (client: Client, channel: TextChannel) => baseGame)
 export interface baseGame {
@@ -13,6 +13,7 @@ export interface baseGame {
 export class baseGame extends eventEmitter {
     client: Client;
     channel: TextChannel;
+    message: Message | undefined;
     collector: InteractionCollector<any> | MessageCollector | undefined;
     constructor(client: Client, channel: TextChannel) {
         super()
@@ -81,6 +82,9 @@ export default class GameManager {
             for (let guild in this.guilds) {
                 let guildData = this.guilds[guild]
                 if (guildData.mainChan) {
+                    if (guildData.game) {
+                        guildData.game.end()
+                    }
                     let randomNum = random(0, this.runnableGames.length - 1)
                     let game = new this.runnableGames[randomNum](this.client, guildData.mainChan)
                     game.init()

@@ -37,22 +37,22 @@ export default class trivia extends baseGame {
             let row = new ActionRowBuilder<StringSelectMenuBuilder>()
                 .addComponents(selectmenu)
             embed.setDescription(stringMax(trivia.question, 4096))
-            let triviaMessage = await this.channel.send({ embeds: [embed], components: [row] })
+            this.message = await this.channel.send({ embeds: [embed], components: [row] })
 
             let answerers: String[] = []
             let CorrectAnswerers: String[] = []
             console.log("Trivia:", trivia.correctAnswer)
-            this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: triviaMessage }).on('collect', async interaction => {
+            this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: this.message }).on('collect', async interaction => {
                 let member = interaction.member
                 if (interaction.customId == "trivia" && interaction instanceof StringSelectMenuInteraction && !answerers.includes(interaction.user.id) && member instanceof DiscordGuildMember) {
                     answerers.push(interaction.user.id)
-                    if (interaction.values[0] == answerIndex.toString()) {
+                    if (interaction.values[0] == answerIndex.toString()&&this.message) {
                         CorrectAnswerers.push(interaction.user.id)
                         this.emit('correctanswer', interaction, Math.round(trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length)
 
                         interaction.deferUpdate()
                         embed.addFields([{ name: numberedStringArraySingle('', CorrectAnswerers.length - 1), value: member.displayName, inline: true }])
-                        triviaMessage.edit({ embeds: [embed], components: [row] })
+                        this.message.edit({ embeds: [embed], components: [row] })
                     } else {
                         let user = new GuildMemberManager(data.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id))
                         user.addXP(25, this.channel.id)
@@ -63,15 +63,11 @@ export default class trivia extends baseGame {
                         }, 20000);
                     }
                 }
-            }).on('end', () => {
-                embed.setFooter({ text: "Correct answer: " + trivia.correctAnswer })
-                embed.setColor("NotQuiteBlack")
-                selectmenu.setDisabled(true)
-                triviaMessage.edit({ embeds: [embed], components: [row] })
-            }) as InteractionCollector<StringSelectMenuInteraction>;
+            })
         }
     }
     end() {
+        if (this.message&&this.message.deletable) this.message.delete();
         if (this.collector) this.collector.stop();
     }
 }

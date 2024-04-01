@@ -76,20 +76,20 @@ class trivia extends gamemanager_1.baseGame {
                 let row = new discord_js_1.ActionRowBuilder()
                     .addComponents(selectmenu);
                 embed.setDescription((0, utilities_1.stringMax)(trivia.question, 4096));
-                let triviaMessage = yield this.channel.send({ embeds: [embed], components: [row] });
+                this.message = yield this.channel.send({ embeds: [embed], components: [row] });
                 let answerers = [];
                 let CorrectAnswerers = [];
                 console.log("Trivia:", trivia.correctAnswer);
-                this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: triviaMessage }).on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
+                this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: this.message }).on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
                     let member = interaction.member;
                     if (interaction.customId == "trivia" && interaction instanceof discord_js_1.StringSelectMenuInteraction && !answerers.includes(interaction.user.id) && member instanceof discord_js_1.GuildMember) {
                         answerers.push(interaction.user.id);
-                        if (interaction.values[0] == answerIndex.toString()) {
+                        if (interaction.values[0] == answerIndex.toString() && this.message) {
                             CorrectAnswerers.push(interaction.user.id);
                             this.emit('correctanswer', interaction, Math.round(trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length);
                             interaction.deferUpdate();
                             embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: member.displayName, inline: true }]);
-                            triviaMessage.edit({ embeds: [embed], components: [row] });
+                            this.message.edit({ embeds: [embed], components: [row] });
                         }
                         else {
                             let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
@@ -101,16 +101,13 @@ class trivia extends gamemanager_1.baseGame {
                             }, 20000);
                         }
                     }
-                })).on('end', () => {
-                    embed.setFooter({ text: "Correct answer: " + trivia.correctAnswer });
-                    embed.setColor("NotQuiteBlack");
-                    selectmenu.setDisabled(true);
-                    triviaMessage.edit({ embeds: [embed], components: [row] });
-                });
+                }));
             }
         });
     }
     end() {
+        if (this.message && this.message.deletable)
+            this.message.delete();
         if (this.collector)
             this.collector.stop();
     }

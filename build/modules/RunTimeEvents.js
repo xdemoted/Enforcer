@@ -44,19 +44,29 @@ class RunTimeEvents extends events_1.default {
 }
 exports.RunTimeEvents = RunTimeEvents;
 class RunTimeEventsDebug extends events_1.default {
-    constructor() {
+    constructor(runInstantly) {
+        console.log('A RunTime Debug Has Started');
         super();
-        let time = 13;
-        this.hourlyInterval = setTimeout(() => {
-            this.emit('hour', time % 24);
-            this.hourlyInterval = setInterval(() => {
-                time += 2;
-                this.emit('hour', time % 24);
+        setTimeout(() => {
+            if (runInstantly) {
+                this.emit('hour', new Date().getHours());
+                this.emit('5minute');
+            }
+            this.hourlyInterval = setTimeout(() => {
+                this.emit('hour', new Date().getHours());
+                this.hourlyInterval = setInterval(() => {
+                    this.emit('hour', new Date().getHours());
+                }, 5000);
             }, 10000);
+            this.minuteInterval = setInterval(() => {
+                this.emit('5minute');
+            }, 300000); // emit event every 5 minutes
         }, 5000);
     }
     stop() {
         clearInterval(this.hourlyInterval);
+        clearInterval(this.dailyInterval);
+        clearInterval(this.minuteInterval);
     }
 }
 exports.RunTimeEventsDebug = RunTimeEventsDebug;

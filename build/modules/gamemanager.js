@@ -112,6 +112,9 @@ class GameManager {
             for (let guild in this.guilds) {
                 let guildData = this.guilds[guild];
                 if (guildData.mainChan) {
+                    if (guildData.game) {
+                        guildData.game.end();
+                    }
                     let randomNum = (0, utilities_1.random)(0, this.runnableGames.length - 1);
                     let game = new this.runnableGames[randomNum](this.client, guildData.mainChan);
                     game.init();
@@ -123,9 +126,9 @@ class GameManager {
             }
         });
     }
-    reward(msg, reward = 200) {
-        var _a, _b, _c;
-        return __awaiter(this, void 0, void 0, function* () {
+    reward(msg_1) {
+        return __awaiter(this, arguments, void 0, function* (msg, reward = 200) {
+            var _a, _b, _c;
             // guildID, Channel, Author, User
             reward = Math.round(reward);
             if (msg.guildId == undefined)

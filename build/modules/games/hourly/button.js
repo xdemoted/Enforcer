@@ -26,8 +26,8 @@ class button extends gamemanager_1.baseGame {
                 .setCustomId('click')
                 .setLabel(`Don't Touch`)
                 .setStyle(discord_js_1.ButtonStyle.Primary));
-            let message = yield this.channel.send({ content: 'Its a button, it does things... I think?', components: [row] });
-            this.collector = this.channel.createMessageComponentCollector({ time: 3600000, filter: i => (i.customId === 'click' && message.id == i.message.id), componentType: discord_js_1.ComponentType.Button, });
+            this.message = yield this.channel.send({ content: 'Its a button, it does things... I think?', components: [row] });
+            this.collector = this.channel.createMessageComponentCollector({ time: 3600000, filter: i => (i.customId === 'click' && this.message.id == i.message.id), componentType: discord_js_1.ComponentType.Button, });
             this.collector.on('collect', (i) => __awaiter(this, void 0, void 0, function* () {
                 let outcome = Math.random();
                 let guild = data_1.default.getGuildManager(i.guildId);
@@ -63,6 +63,8 @@ class button extends gamemanager_1.baseGame {
     end() {
         if (this.collector)
             this.collector.stop();
+        if (this.message && this.message.deletable)
+            this.message.delete();
     }
 }
 exports.default = button;

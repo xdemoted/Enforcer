@@ -20,6 +20,9 @@ export class GetFile {
     static serverData = (): CacheData => {
         return require(this.serverPath)
     }
+    static wordList = (): string[] => {
+        return require(this.assets + '/words.json')
+    }
 }
 export class eventEmitter extends EventEmitter {
     constructor() {

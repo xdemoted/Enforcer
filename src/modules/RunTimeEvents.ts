@@ -41,19 +41,31 @@ export class RunTimeEvents extends EventEmitter {
   }
 }
 export class RunTimeEventsDebug extends EventEmitter {
-  private hourlyInterval: NodeJS.Timeout;
-  constructor() {
+  private hourlyInterval: NodeJS.Timeout | undefined;
+  private dailyInterval: NodeJS.Timeout | undefined;
+  private minuteInterval: NodeJS.Timeout | undefined;
+  constructor(runInstantly?: boolean) {
+    console.log('A RunTime Debug Has Started')
     super()
-    let time = 13
-    this.hourlyInterval = setTimeout(() => {
-      this.emit('hour', time % 24)
-      this.hourlyInterval = setInterval(() => {
-        time += 2
-        this.emit('hour', time % 24)
+    setTimeout(() => {
+      if (runInstantly) {
+        this.emit('hour', new Date().getHours())
+        this.emit('5minute');
+      }
+      this.hourlyInterval = setTimeout(() => {
+        this.emit('hour', new Date().getHours())
+        this.hourlyInterval = setInterval(() => {
+          this.emit('hour', new Date().getHours())
+        }, 5000);
       }, 10000);
+      this.minuteInterval = setInterval(() => {
+        this.emit('5minute');
+      }, 300000); // emit event every 5 minutes
     }, 5000);
   }
   public stop() {
     clearInterval(this.hourlyInterval);
+    clearInterval(this.dailyInterval);
+    clearInterval(this.minuteInterval);
   }
 }

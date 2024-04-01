@@ -39,6 +39,9 @@ GetFile.tradecardManifest = () => {
 GetFile.serverData = () => {
     return require(_a.serverPath);
 };
+GetFile.wordList = () => {
+    return require(_a.assets + '/words.json');
+};
 class eventEmitter extends events_1.default {
     constructor() {
         super();

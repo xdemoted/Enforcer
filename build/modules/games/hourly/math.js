@@ -43,7 +43,7 @@ class math extends gamemanager_1.baseGame {
             let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color);
             let answer = equation[1];
             if (this.channel instanceof discord_js_1.TextChannel) {
-                let message = yield this.channel.send({ embeds: [embed] });
+                this.message = yield this.channel.send({ embeds: [embed] });
                 this.collector = this.channel.createMessageCollector({ time: 3600000 });
                 this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
                     var _a;
@@ -52,15 +52,22 @@ class math extends gamemanager_1.baseGame {
                         embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
                             .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} solved the problem.`)
                             .setFooter({ text: "Solved for " + difficulty * 100 + " xp" });
-                        message.edit({ embeds: [embed] });
+                        if (this.message)
+                            this.message.edit({ embeds: [embed] });
                         if (this.collector)
                             this.collector.stop();
+                        setTimeout(() => {
+                            if (msg.deletable)
+                                msg.delete();
+                        }, 5000);
                     }
                 }));
             }
         });
     }
     end() {
+        if (this.message && this.message.deletable)
+            this.message.delete();
         if (this.collector)
             this.collector.stop();
     }

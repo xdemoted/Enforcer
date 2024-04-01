@@ -613,6 +613,19 @@ export async function getLeaderCard(users: (GuildMember | User)[], resolution = 
     }
     return canvas
 }
+export function getWord(length:number) {
+    const words = GetFile.wordList()
+    const filteredWords = words.filter(word => word.length === length);
+    let randomWord
+    if (filteredWords.length > 0) {
+    const randomIndex = Math.floor(Math.random() * filteredWords.length);
+    randomWord = filteredWords[randomIndex];
+    } else {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        randomWord = words[randomIndex]
+    }
+    return randomWord;
+}
 export async function getNamecard(gUser: GuildMember | User, data: DataManager, rank?: number, resolution = 1) {
     let user: BaseUserManager;
     let gUser2: GlobalUser;

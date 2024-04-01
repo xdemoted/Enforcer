@@ -25,7 +25,7 @@ export default class math extends baseGame {
         let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color)
         let answer = equation[1]
         if (this.channel instanceof TextChannel) {
-            let message = await this.channel.send({ embeds: [embed] })
+            this.message = await this.channel.send({ embeds: [embed] })
             this.collector = this.channel.createMessageCollector({ time: 3600000 })
             this.collector.on('collect', async msg => {
                 if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
@@ -33,14 +33,19 @@ export default class math extends baseGame {
                     embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
                         .setTitle(`${msg.member?.displayName} solved the problem.`)
                         .setFooter({ text: "Solved for " + difficulty * 100 + " xp" })
-                    message.edit({ embeds: [embed] })
+                    if (this.message)
+                    this.message.edit({ embeds: [embed] })
                     if (this.collector) this.collector.stop();
+                    setTimeout(() => {
+                        if (msg.deletable) msg.delete();
+                    }, 5000);
                 }
             })
 
         }
     }
     end() {
+        if (this.message && this.message.deletable) this.message.delete();
         if (this.collector) this.collector.stop();
     }
 }

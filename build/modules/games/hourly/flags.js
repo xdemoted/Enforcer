@@ -97,6 +97,8 @@ class flags extends gamemanager_1.baseGame {
     }
     end() {
         if (this.message) {
+            if (this.message.deletable)
+                this.message.delete();
         }
         if (this.collector)
             this.collector.stop();
