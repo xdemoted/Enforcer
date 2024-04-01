@@ -22,8 +22,8 @@ class daily extends commands_1.baseCommand {
         this.serverManager = commandData.serverManager;
     }
     execute(interaction) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             let bet = (_a = interaction.options.get('bet')) === null || _a === void 0 ? void 0 : _a.value;
             if (this.memberManager.getTimer('flip') + 30000 < Date.now()) {
                 if (typeof bet == 'number' && bet >= 50) {

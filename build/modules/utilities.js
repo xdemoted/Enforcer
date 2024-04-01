@@ -238,8 +238,8 @@ function generateEquation(map) {
     return [string, finalSolution];
 }
 exports.generateEquation = generateEquation;
-function createBackgroundImage(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
+function createBackgroundImage(url, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution);
@@ -261,8 +261,8 @@ function createBackgroundImage(url_1) {
         return canvas;
     });
 }
-function createTemplate(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
+function createTemplate(url, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         let palette = yield getPalette(url);
@@ -291,8 +291,8 @@ function createTemplate(url_1) {
         return canvas;
     });
 }
-function createNameCard(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
+function createNameCard(url, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         //try {
         //    await loadImage(url)
         //} catch (error) {
@@ -560,8 +560,8 @@ function cardDraw(guarantee) {
     return card;
 }
 exports.cardDraw = cardDraw;
-function addFrame(source_1, rank_1) {
-    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
+function addFrame(source, rank, scale = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -662,8 +662,8 @@ function openChestGif(background, rank) {
     });
 }
 exports.openChestGif = openChestGif;
-function getLeaderCard(users_1) {
-    return __awaiter(this, arguments, void 0, function* (users, resolution = 1, data) {
+function getLeaderCard(users, resolution = 1, data) {
+    return __awaiter(this, void 0, void 0, function* () {
         let canvas = new canvas_1.Canvas(2450 * resolution, 1925 * resolution);
         let context = canvas.getContext('2d');
         for (let i = 0; i < users.length; i++) {
@@ -688,8 +688,8 @@ function getWord(length) {
     return randomWord;
 }
 exports.getWord = getWord;
-function getNamecard(gUser_1, data_2, rank_1) {
-    return __awaiter(this, arguments, void 0, function* (gUser, data, rank, resolution = 1) {
+function getNamecard(gUser, data, rank, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let user;
         let gUser2;
         if (gUser instanceof discord_js_1.User) {

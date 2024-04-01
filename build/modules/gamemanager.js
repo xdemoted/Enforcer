@@ -126,9 +126,9 @@ class GameManager {
             }
         });
     }
-    reward(msg_1) {
-        return __awaiter(this, arguments, void 0, function* (msg, reward = 200) {
-            var _a, _b, _c;
+    reward(msg, reward = 200) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
             // guildID, Channel, Author, User
             reward = Math.round(reward);
             if (msg.guildId == undefined)
