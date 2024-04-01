@@ -1,5 +1,5 @@
-import { Client, ColorResolvable, EmbedBuilder, TextChannel } from 'discord.js';
-import { generateEquation, maps, random } from '../../utilities';
+import { AttachmentBuilder, Client, ColorResolvable, EmbedBuilder, TextChannel } from 'discord.js';
+import { createColorText, generateEquation, maps, random } from '../../utilities';
 import { baseGame } from '../../gamemanager';
 export default class math extends baseGame {
     constructor(client: Client, channel: TextChannel) {
@@ -22,10 +22,12 @@ export default class math extends baseGame {
                 color = "Red"
             } break;
         }
-        let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color)
+        let image = createColorText(equation[0])
+        let attachment = new AttachmentBuilder(image.toBuffer(), {name:"equation.png"})
+        let embed = new EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setImage('attachment://equation.png').setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color)
         let answer = equation[1]
         if (this.channel instanceof TextChannel) {
-            this.message = await this.channel.send({ embeds: [embed] })
+            this.message = await this.channel.send({ embeds: [embed], files: [attachment]})
             this.collector = this.channel.createMessageCollector({ time: 3600000 })
             this.collector.on('collect', async msg => {
                 if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {

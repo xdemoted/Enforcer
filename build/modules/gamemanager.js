@@ -42,6 +42,7 @@ const utilities_1 = require("./utilities");
 const fs_1 = __importDefault(require("fs"));
 const quizbowl_1 = __importDefault(require("./games/special/quizbowl"));
 const RunTimeEvents_1 = require("./RunTimeEvents");
+let debug = 'math.js';
 class baseGame extends data_1.eventEmitter {
     constructor(client, channel) {
         super();
@@ -65,6 +66,8 @@ class GameManager {
     }
     init() {
         let gamesList = fs_1.default.readdirSync(data_1.GetFile.gamePath + "/hourly");
+        if (debug)
+            gamesList = [debug];
         for (let game of gamesList) {
             if (!game.endsWith('.js'))
                 continue;

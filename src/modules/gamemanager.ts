@@ -10,6 +10,8 @@ export interface baseGame {
     on(event: 'correctanswer', listener: (msg: Message | Interaction, reward: number) => void): this;
     emit(event: 'correctanswer', msg: Message | Interaction, reward: number): boolean;
 }
+
+let debug = 'math.js'
 export class baseGame extends eventEmitter {
     client: Client;
     channel: TextChannel;
@@ -36,6 +38,7 @@ export default class GameManager {
     }
     init() {
         let gamesList = fs.readdirSync(GetFile.gamePath + "/hourly")
+        if (debug) gamesList = [debug]
         for (let game of gamesList) {
             if (!game.endsWith('.js')) continue
             let gameClass: BaseGameClass = require(`${GetFile.gamePath}/hourly/${game}`).default

@@ -452,29 +452,51 @@ async function openChestGif() {
 //createCard('https://images.wallpapersden.com/image/download/godzilla_bGtqamqUmZqaraWkpJRmbmdlrWZnZWU.jpg', 3, [50, (1400 * scale - 1400) / 2], scale, 'h', false)
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA
+function modColor(color:[number,number,number],modifier: number) {
+    let newColor = color.map((value, index) => {
+        let newValue = value + modifier
+        if (newValue > 255) newValue = 255
+        if (newValue < 0) newValue = 0
+        return newValue
+    })
+    return newColor as [number,number,number]
+}
 async function colorEncoder(str: string) {
-    const colorMap: Record<string, string> = {"&0": '#FF00FF', "&1": '#FF0000', '&2': '#00FF00', '&3': '#0000FF', '&4': '#FFFF00', '&5': '#00FFFF', '&6': '#FF00FF' }
+    const colorMap: Record<string, [number,number,number]> = {"&0": [230,230,0], "&1": [200,20,175], '&2': [52,152,219], "&3": [230,230,0], "&4": [200,20,175], '&5': [52,152,219], "&6": [230,230,0], "&7": [200,20,175], '&8': [52,152,219]}
     const regex = /&\d/g;
+    const modifiedStr = str.replace(regex, '');
     const parts = str.split(/(&\d)/)
     if (parts[0].length == 0) parts.splice(0, 1);
-    console.log(parts);
     let length = 0;
-    let canvas = new Canvas(20000, 400);
+    let canvas = new Canvas(1, 1);
     let ctx = canvas.getContext('2d');
+    ctx.font = '40px Segmento';
+    canvas = new Canvas(ctx.measureText(modifiedStr).width,50)
+    ctx = canvas.getContext('2d')
     ctx.font = '40px Segmento';
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         if (!part.startsWith('&')) {
-            console.log(parts[i - 1])
+            let color: [number,number,number]
             if (parts[i - 1] && parts[i - 1].startsWith('&')) {
-                ctx.fillStyle = colorMap[parts[i - 1]];
-            } else ctx.fillStyle = '#FFFFFF';
-            ctx.fillText(part, length, 100)
-            length += ctx.measureText(part).width;
+                color = colorMap[parts[i - 1]]
+            } else color = [255, 255, 255]
+            part.split('').forEach((char, index) => {
+                let symbolColor = color
+                if (/^[a-z0-9]+$/i.test(char)) {
+                    symbolColor = modColor(color, -50)
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                } else if (/[+\-/*/^]/.test(char)) {
+                    symbolColor = modColor(color, -25)
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                } else {
+                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                }
+                ctx.fillText(char, length, 35)
+                length += ctx.measureText(char).width;
+            })
         }
     }
-    //ctx.fillText('TEST', 100,100)
-    //canvas.width = length;
     fs.writeFileSync(GetFile.assets + '/jim.png', canvas.toBuffer());
 }
 async function createColorText(str: string) {
@@ -504,11 +526,9 @@ async function createColorText(str: string) {
         }
         return char;
     }).join('');
-    console.log(left, right, pairs,modifiedStr);
     colorEncoder(modifiedStr);
 }
-can.registerFont(GetFile.assets+'/fonts/segmento.otf', { family: 'Segmento' })
 //colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-createColorText('((8+5)-(5-6))+((51+20)-(22-10))')
+createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30

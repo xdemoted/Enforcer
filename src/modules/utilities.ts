@@ -675,3 +675,79 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
     return canvas;
 }
+function modColor(color:[number,number,number],modifier: number) {
+    let newColor = color.map((value, index) => {
+        let newValue = value + modifier
+        if (newValue > 255) newValue = 255
+        if (newValue < 0) newValue = 0
+        return newValue
+    })
+    return newColor as [number,number,number]
+}
+export function colorEncoder(str: string) {
+    const colorMap: Record<string, [number,number,number]> = {"&f": [255,255,255],"&0": [230,230,0], "&1": [200,20,175], '&2': [52,152,219], "&3": [230,230,0], "&4": [200,20,175], '&5': [52,152,219], "&6": [230,230,0], "&7": [200,20,175], '&8': [52,152,219]}
+    const regex = /&\d/g;
+    const modifiedStr = str.replace(regex, '');
+    const parts = str.split(/(&\d|&f)/)
+    if (parts[0].length == 0) parts.splice(0, 1);
+    let length = 0;
+    let canvas = new Canvas(1, 1);
+    let ctx = canvas.getContext('2d');
+    ctx.font = '160px Segmento';
+    canvas = new Canvas(ctx.measureText(modifiedStr).width+100,500)
+    ctx = canvas.getContext('2d')
+    ctx.font = '160px Segmento';
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!part.startsWith('&')) {
+            let color: [number,number,number]
+            if (parts[i - 1] && parts[i - 1].startsWith('&')) {
+                color = colorMap[parts[i - 1]]
+            } else color = [255, 255, 255]
+            part.split('').forEach((char, index) => {
+                let symbolColor = color
+                if (/^[a-z0-9]+$/i.test(char)) {
+                    symbolColor = modColor(color, -50)
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                } else if (/[+\-/*/^]/.test(char)) {
+                    symbolColor = modColor(color, -25)
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                } else {
+                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                }
+                ctx.fillText(char, length+100, 140)
+                length += ctx.measureText(char).width;
+            })
+        }
+    }
+    return canvas;
+}
+export function createColorText(str: string) {
+    let left: number[] = [];
+    let right: number[] = [];
+    let pairs: number[][] = [];
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] === '(') {
+            left.push(i);
+        } else if (str[i] === ')') {
+            right.push(i);
+            let leftIndex = left.pop();
+            pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
+        }
+    }
+    let modifiedStr = str.split('').map((char, index) => {
+        if (char === '(') {
+            let pair = pairs.find(pair => pair[0] === index)
+            if (pair) {
+                return `\&${pair[2]}(`
+            }
+        } else if (char === ')') {
+            let pair = pairs.find(pair => pair[1] === index)
+            if (pair) {
+                return `)\&${pair[2] - 1>=0?pair[2] - 1:'f'}`
+            }
+        }
+        return char;
+    }).join('');
+    return colorEncoder(modifiedStr);
+}

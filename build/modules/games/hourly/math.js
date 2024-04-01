@@ -40,10 +40,12 @@ class math extends gamemanager_1.baseGame {
                     }
                     break;
             }
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color);
+            let image = (0, utilities_1.createColorText)(equation[0]);
+            let attachment = new discord_js_1.AttachmentBuilder(image.toBuffer(), { name: "equation.png" });
+            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setImage('attachment://equation.png').setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color);
             let answer = equation[1];
             if (this.channel instanceof discord_js_1.TextChannel) {
-                this.message = yield this.channel.send({ embeds: [embed] });
+                this.message = yield this.channel.send({ embeds: [embed], files: [attachment] });
                 this.collector = this.channel.createMessageCollector({ time: 3600000 });
                 this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
                     var _a;

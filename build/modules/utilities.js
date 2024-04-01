@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
+exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
 const canvas_1 = require("canvas");
 const path_1 = __importDefault(require("path"));
 const discord_js_1 = require("discord.js");
@@ -741,3 +741,90 @@ function getNamecard(gUser, data, rank, resolution = 1) {
     });
 }
 exports.getNamecard = getNamecard;
+function modColor(color, modifier) {
+    let newColor = color.map((value, index) => {
+        let newValue = value + modifier;
+        if (newValue > 255)
+            newValue = 255;
+        if (newValue < 0)
+            newValue = 0;
+        return newValue;
+    });
+    return newColor;
+}
+function colorEncoder(str) {
+    const colorMap = { "&f": [255, 255, 255], "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
+    const regex = /&\d/g;
+    const modifiedStr = str.replace(regex, '');
+    const parts = str.split(/(&\d|&f)/);
+    if (parts[0].length == 0)
+        parts.splice(0, 1);
+    let length = 0;
+    let canvas = new canvas_1.Canvas(1, 1);
+    let ctx = canvas.getContext('2d');
+    ctx.font = '160px Segmento';
+    canvas = new canvas_1.Canvas(ctx.measureText(modifiedStr).width + 100, 500);
+    ctx = canvas.getContext('2d');
+    ctx.font = '160px Segmento';
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!part.startsWith('&')) {
+            let color;
+            if (parts[i - 1] && parts[i - 1].startsWith('&')) {
+                color = colorMap[parts[i - 1]];
+            }
+            else
+                color = [255, 255, 255];
+            part.split('').forEach((char, index) => {
+                let symbolColor = color;
+                if (/^[a-z0-9]+$/i.test(char)) {
+                    symbolColor = modColor(color, -50);
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                }
+                else if (/[+\-/*/^]/.test(char)) {
+                    symbolColor = modColor(color, -25);
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                }
+                else {
+                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                }
+                ctx.fillText(char, length + 100, 140);
+                length += ctx.measureText(char).width;
+            });
+        }
+    }
+    return canvas;
+}
+exports.colorEncoder = colorEncoder;
+function createColorText(str) {
+    let left = [];
+    let right = [];
+    let pairs = [];
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] === '(') {
+            left.push(i);
+        }
+        else if (str[i] === ')') {
+            right.push(i);
+            let leftIndex = left.pop();
+            pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
+        }
+    }
+    let modifiedStr = str.split('').map((char, index) => {
+        if (char === '(') {
+            let pair = pairs.find(pair => pair[0] === index);
+            if (pair) {
+                return `\&${pair[2]}(`;
+            }
+        }
+        else if (char === ')') {
+            let pair = pairs.find(pair => pair[1] === index);
+            if (pair) {
+                return `)\&${pair[2] - 1 >= 0 ? pair[2] - 1 : 'f'}`;
+            }
+        }
+        return char;
+    }).join('');
+    return colorEncoder(modifiedStr);
+}
+exports.createColorText = createColorText;
