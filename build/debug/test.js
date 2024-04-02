@@ -31,17 +31,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const canvas_1 = require("canvas");
 var quantize = require('quantize');
 const fs = __importStar(require("fs"));
 const utilities_1 = require("../modules/utilities");
 const data_1 = require("../modules/data");
-const crypto_1 = require("crypto");
-const gifencoder_1 = __importDefault(require("gifencoder"));
 const url = 'https://music.youtube.com/watch?v=6ywXBNpc-To&list=LM';
 function createNamecard() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -281,8 +276,8 @@ function testCard() {
         fs.writeFileSync('../testFrame.png', canvas.toBuffer());
     });
 }
-function autoScaleCardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = 1, mode = 'h', mark) {
-    return __awaiter(this, void 0, void 0, function* () {
+function autoScaleCardBackground() {
+    return __awaiter(this, arguments, void 0, function* (url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = 1, mode = 'h', mark) {
         if (mode == 'h') {
             let image = yield (0, canvas_1.loadImage)(url);
             let scaled = 1400 / image.height * scale;
@@ -295,8 +290,8 @@ function autoScaleCardBackground(url = data_1.GetFile.assets + '/images/tradecar
         }
     });
 }
-function cardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = [1, 1], mark) {
-    return __awaiter(this, void 0, void 0, function* () {
+function cardBackground() {
+    return __awaiter(this, arguments, void 0, function* (url = data_1.GetFile.assets + '/images/tradecards/backgrounds/default.png', translation = [0, 0], scale = [1, 1], mark) {
         let canvas = new canvas_1.Canvas(1000, 1400);
         let ctx = canvas.getContext('2d');
         let image = yield (0, canvas_1.loadImage)(url);
@@ -342,8 +337,8 @@ function cardBackground(url = data_1.GetFile.assets + '/images/tradecards/backgr
         return canvas;
     });
 }
-function addFrame(source, rank, scale = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function addFrame(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -367,8 +362,8 @@ function addFrame(source, rank, scale = 1) {
         return canvas;
     });
 }
-function createCard(source, rank, translation = [0, 0], scale = 1, mode = 'h', mark) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createCard(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, translation = [0, 0], scale = 1, mode = 'h', mark) {
         let canvas = yield autoScaleCardBackground(source, translation, scale, mode, mark);
         fs.writeFileSync('./noframe.png', canvas.toBuffer());
         let frame = yield addFrame(canvas, rank, scale);
@@ -391,68 +386,10 @@ function listCards() {
         return canvas;
     });
 }
-let scale = 1;
-let settings = { paddingX: 20, paddingY: 20 };
-function createCatalog(id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let data = require(data_1.GetFile.assets + '/images/tradecards/manifest.json');
-        let cards = data.cards;
-        let catalog = data.collections.find(c => c.id == id);
-        if (catalog && catalog.background) {
-            let catalogCards = [];
-            let cardvas = new canvas_1.Canvas(1250 + settings.paddingX * 4, Math.ceil(cards.length / 5) * (350 + settings.paddingY));
-            let cardctx = cardvas.getContext('2d');
-            for (let i = 0; i < catalog.cards.length; i++) {
-                const card = cards.find(c => c.id == catalog.cards[i]);
-                if (card)
-                    catalogCards.push(card);
-            }
-            catalogCards.sort((b, a) => a.rank - b.rank);
-            for (let i = 0; i < catalogCards.length; i++) {
-                const card = catalogCards[i];
-                if (card) {
-                    let image = yield addFrame(data_1.GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25);
-                    cardctx.drawImage(image, (i % 5) * (250 + settings.paddingX), Math.floor(i / 5) * (350 + settings.paddingY), 250, 350);
-                }
-            }
-            let catalogcanvas = new canvas_1.Canvas(1530, 2180);
-            let catalogctx = catalogcanvas.getContext('2d');
-            let background = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + `/images/tradecards/catalogs/${catalog.background}`);
-            catalogctx.drawImage(background, 0, 0, 1530, 2180);
-            catalogctx.drawImage(cardvas, 40, 560, 1450, 2000);
-            cardctx.drawImage(background, 0, 0);
-            fs.writeFileSync('./catalog.png', catalogcanvas.toBuffer());
-        }
-    });
-}
-function cardDraw(guarantee) {
-    let cards = data_1.GetFile.tradecardManifest().cards;
-    let weightTotal = 0;
-    for (let i = 0; i < cards.length; i++) {
-        weightTotal += cards[i].rank == 1 ? 50 : cards[i].rank == 2 ? 25 : 2;
-    }
-    if (guarantee || (0, crypto_1.randomInt)(0, 100) < 10) {
-        let card;
-        while (card == undefined) {
-            let roll = (0, crypto_1.randomInt)(0, weightTotal);
-            let weight = 0;
-            for (let i = 0; i < cards.length; i++) {
-                weight += cards[i].rank == 1 ? 50 : cards[i].rank == 2 ? 25 : 2;
-                if (roll < weight) {
-                    card = cards[i];
-                    break;
-                }
-            }
-        }
-        return card;
-    }
-    else
-        return undefined;
-}
 function multiDraw(amount, guarantee = false) {
     let results = [];
     for (let i = 0; i < amount; i++) {
-        results.push(cardDraw(guarantee));
+        results.push((0, utilities_1.cardDraw)(guarantee));
     }
     return results;
 }
@@ -462,7 +399,7 @@ function rollTest() {
     let ones = 0;
     let twos = 0;
     let threes = 0;
-    console.log(rolls.sort((a, b) => { return a ? a.rank : 0 - (b ? b.rank : 0); }));
+    console.log(rolls.sort((a, b) => { return (a && typeof a.rank == 'number' ? a.rank : 10) - (b && typeof b.rank == 'number' ? b.rank : 10); }));
     for (let i = 0; i < rolls.length; i++) {
         const roll = rolls[i];
         if ((roll === null || roll === void 0 ? void 0 : roll.rank) == 0)
@@ -482,50 +419,6 @@ function rollTest() {
     console.log('Three Star (Isolated):', Math.round(threes / total * 10000) / 100, '%');
     console.log('Two Star (Isolated):', Math.round(twos / total * 10000) / 100, '%');
     console.log('One Star (Isolated):', Math.round(ones / total * 10000) / 100, '%');
-}
-function openChestGif() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const start = Date.now();
-        let encoder = new gifencoder_1.default(250, 350);
-        encoder.setDelay(50);
-        encoder.setRepeat(-1);
-        encoder.start();
-        let frames = fs.readdirSync(data_1.GetFile.assets + '/images/tradecards/chestgif');
-        console.log(frames);
-        for (let i = 0; i < 25; i++) {
-            let image = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + '/images/tradecards/chestgif/1.gif');
-            let canvas = new canvas_1.Canvas(250, 350);
-            let ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#313338';
-            ctx.fillRect(0, 0, 250, 350);
-            ctx.drawImage(image, Math.round((0, crypto_1.randomInt)(i + 1) - (i + 1) / 2), Math.round((0, crypto_1.randomInt)(i + 1) - (i + 1) / 2), 250, 350);
-            //@ts-ignore
-            encoder.addFrame(ctx);
-        }
-        for (let i = 0; i < frames.length; i++) {
-            let image = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + '/images/tradecards/chestgif/' + frames[i]);
-            let image2 = yield addFrame(data_1.GetFile.assets + '/images/tradecards/backgrounds/wendigo.png', 3);
-            let canvas = new canvas_1.Canvas(250, 350);
-            let ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#313338';
-            ctx.fillRect(0, 0, 250, 350);
-            ctx.drawImage(image, 0, 30 * i, 250, 350);
-            ctx.beginPath();
-            ctx.moveTo(0, 197 + 30 * i);
-            ctx.lineTo(250, 197 + 30 * i);
-            ctx.lineTo(250, 0);
-            ctx.lineTo(0, 0);
-            ctx.clip();
-            if (i != 0)
-                ctx.drawImage(image2, 55 - (55 / 7) * (i + 1), 197 - (197 / 7) * (i + 1), 144 + ((250 - 144) / 7) * (i + 1), 202 + ((350 - 202) / 7) * (i + 1));
-            //@ts-ignore
-            encoder.addFrame(ctx);
-            //if (i == 0) encoder.setDelay(50)
-            console.log(Date.now() - start);
-        }
-        encoder.finish();
-        fs.writeFileSync('./test.gif', encoder.out.getData());
-    });
 }
 //openChestGif()
 //createCatalog(0)
@@ -624,6 +517,7 @@ function createColorText(str) {
     });
 }
 //colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))');
+createCard(data_1.GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false);
+//createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30

@@ -573,7 +573,7 @@ export type TradecardManifest = {
     cards: {
         id: number,
         title: string,
-        rank: number,
+        rank: number | string,
         description: string,
         background: string
     }[],

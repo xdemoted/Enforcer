@@ -46,7 +46,7 @@ export default class daily extends baseCommand {
             let cards: {
                 id: number;
                 title: string;
-                rank: number;
+                rank: number | string
                 description: string;
                 background: string;
             }[] = []

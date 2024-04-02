@@ -413,9 +413,6 @@ export class ChannelInteractionCollector extends EventEmitter {
         this.removeListener('interactionCreate', this.listeners('interactionCreate')[this.index] as () => void)
     }
 }
-interface GradientOptions {
-
-}
 export class ContextUtilities {
     context: CanvasRenderingContext2D
     constructor(context: CanvasRenderingContext2D) {
@@ -518,7 +515,7 @@ export function cardDraw(guarantee: boolean) {
     }
     return card
 }
-export async function addFrame(source: string | Canvas, rank: number, scale = 1) {
+export async function addFrame(source: string | Canvas, rank: number | string, scale = 1) {
     let canvas = new Canvas(1000 * scale, 1400 * scale)
     let ctx = canvas.getContext('2d');
     let sourceImage
@@ -531,8 +528,11 @@ export async function addFrame(source: string | Canvas, rank: number, scale = 1)
         }
     }
     let frame
-    if (rank == 1 || rank == 2 || rank == 3) frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
-    else frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
+    try {
+        frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
+    } catch {
+       frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
+    }
     ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale)
     ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale)
     return canvas;
@@ -547,7 +547,7 @@ export async function createCatalog(cards: number[], background?: string) {
         const card = allCards.find(c => c.id == cards[i])
         if (card) catalogCards.push(card)
     }
-    catalogCards.sort((b, a) => a.rank - b.rank)
+    catalogCards.sort((b, a) => (typeof a.rank == 'number' ? a.rank : 10) - (typeof b.rank == 'number' ? b.rank : 10))
     for (let i = 0; i < catalogCards.length; i++) {
         const card = catalogCards[i]
         if (card) {
@@ -560,13 +560,13 @@ export async function createCatalog(cards: number[], background?: string) {
     if (background) {
         let catalogBackground = await loadImage(GetFile.assets + `/images/tradecards/catalogs/${background}`)
         catalogctx.drawImage(catalogBackground, 0, 0, 1530, 2180)
-        catalogctx.drawImage(cardvas, 40, 560, 1450,(1450/cardvas.width)*cardvas.height)
+        catalogctx.drawImage(cardvas, 40, 560, 1450, (1450 / cardvas.width) * cardvas.height)
         cardctx.drawImage(catalogBackground, 0, 0)
         return catalogcanvas
     }
     return cardvas
 }
-export async function openChestGif(background: string, rank: number) {
+export async function openChestGif(background: string, rank: number | string) {
     let encoder = new GIFEncoder(250, 350)
     encoder.setDelay(50)
     encoder.setRepeat(-1)
@@ -613,13 +613,13 @@ export async function getLeaderCard(users: (GuildMember | User)[], resolution = 
     }
     return canvas
 }
-export function getWord(length:number) {
+export function getWord(length: number) {
     const words = GetFile.wordList()
     const filteredWords = words.filter(word => word.length === length);
     let randomWord
     if (filteredWords.length > 0) {
-    const randomIndex = Math.floor(Math.random() * filteredWords.length);
-    randomWord = filteredWords[randomIndex];
+        const randomIndex = Math.floor(Math.random() * filteredWords.length);
+        randomWord = filteredWords[randomIndex];
     } else {
         const randomIndex = Math.floor(Math.random() * words.length);
         randomWord = words[randomIndex]
@@ -659,7 +659,7 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     context.fillRect(325 * resolution, 200 * resolution, percent, 50 * resolution);
     context.globalCompositeOperation = 'source-over';
     context.font = `${40 * resolution}px Segmento`;
-    context.fillText(gUser.displayName.slice(0,15), 325 * resolution, 180 * resolution);
+    context.fillText(gUser.displayName.slice(0, 15), 325 * resolution, 180 * resolution);
     context.fillStyle = '#ffffff';
     context.fillText(`Rank #${rank ? rank : user.getRank()}`, 325 * resolution, 60 * resolution);
     context.fillStyle = hexColor;
@@ -675,17 +675,17 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
     return canvas;
 }
-function modColor(color:[number,number,number],modifier: number) {
+function modColor(color: [number, number, number], modifier: number) {
     let newColor = color.map((value, index) => {
         let newValue = value + modifier
         if (newValue > 255) newValue = 255
         if (newValue < 0) newValue = 0
         return newValue
     })
-    return newColor as [number,number,number]
+    return newColor as [number, number, number]
 }
 export function colorEncoder(str: string) {
-    const colorMap: Record<string, [number,number,number]> = {"&f": [255,255,255],"&0": [230,230,0], "&1": [200,20,175], '&2': [52,152,219], "&3": [230,230,0], "&4": [200,20,175], '&5': [52,152,219], "&6": [230,230,0], "&7": [200,20,175], '&8': [52,152,219]}
+    const colorMap: Record<string, [number, number, number]> = { "&f": [255, 255, 255], "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] }
     const regex = /&\d/g;
     const modifiedStr = str.replace(regex, '');
     const parts = str.split(/(&\d|&f)/)
@@ -694,13 +694,13 @@ export function colorEncoder(str: string) {
     let canvas = new Canvas(1, 1);
     let ctx = canvas.getContext('2d');
     ctx.font = '160px Segmento';
-    canvas = new Canvas(ctx.measureText(modifiedStr).width+100,500)
+    canvas = new Canvas(ctx.measureText(modifiedStr).width + 100, 500)
     ctx = canvas.getContext('2d')
     ctx.font = '160px Segmento';
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         if (!part.startsWith('&')) {
-            let color: [number,number,number]
+            let color: [number, number, number]
             if (parts[i - 1] && parts[i - 1].startsWith('&')) {
                 color = colorMap[parts[i - 1]]
             } else color = [255, 255, 255]
@@ -715,7 +715,7 @@ export function colorEncoder(str: string) {
                 } else {
                     ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
                 }
-                ctx.fillText(char, length+100, 140)
+                ctx.fillText(char, length + 100, 140)
                 length += ctx.measureText(char).width;
             })
         }
@@ -744,7 +744,7 @@ export function createColorText(str: string) {
         } else if (char === ')') {
             let pair = pairs.find(pair => pair[1] === index)
             if (pair) {
-                return `)\&${pair[2] - 1>=0?pair[2] - 1:'f'}`
+                return `)\&${pair[2] - 1 >= 0 ? pair[2] - 1 : 'f'}`
             }
         }
         return char;
