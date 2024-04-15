@@ -37,8 +37,6 @@ var quantize = require('quantize');
 const fs = __importStar(require("fs"));
 const utilities_1 = require("../modules/utilities");
 const data_1 = require("../modules/data");
-const crypto_1 = require("crypto");
-const gifencoder_1 = __importDefault(require("gifencoder"));
 canvas_1.default.registerFont('./build/assets/fonts/segmento.otf', { family: 'Segmento' });
 const url = 'https://music.youtube.com/watch?v=6ywXBNpc-To&list=LM';
 function createNamecard() {
@@ -416,7 +414,7 @@ function rollTest() {
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA
 function modColor(color, modifier) {
-    let newColor = color.map((value, _index) => {
+    let newColor = color.map((value, index) => {
         let newValue = value + modifier;
         if (newValue > 255)
             newValue = 255;
@@ -427,47 +425,49 @@ function modColor(color, modifier) {
     return newColor;
 }
 function colorEncoder(str) {
-    const colorMap = { "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
-    const regex = /&\d/g;
-    const modifiedStr = str.replace(regex, '');
-    const parts = str.split(/(&\d)/);
-    if (parts[0].length == 0)
-        parts.splice(0, 1);
-    let length = 0;
-    let canvas = new canvas_1.Canvas(1, 1);
-    let ctx = canvas.getContext('2d');
-    ctx.font = '40px Segmento';
-    canvas = new canvas_1.Canvas(ctx.measureText(modifiedStr).width, 50);
-    ctx = canvas.getContext('2d');
-    ctx.font = '40px Segmento';
-    for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        if (!part.startsWith('&')) {
-            let color;
-            if (parts[i - 1] && parts[i - 1].startsWith('&')) {
-                color = colorMap[parts[i - 1]];
+    return __awaiter(this, void 0, void 0, function* () {
+        const colorMap = { "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
+        const regex = /&\d/g;
+        const modifiedStr = str.replace(regex, '');
+        const parts = str.split(/(&\d)/);
+        if (parts[0].length == 0)
+            parts.splice(0, 1);
+        let length = 0;
+        let canvas = new canvas_1.Canvas(1, 1);
+        let ctx = canvas.getContext('2d');
+        ctx.font = '40px Segmento';
+        canvas = new canvas_1.Canvas(ctx.measureText(modifiedStr).width, 50);
+        ctx = canvas.getContext('2d');
+        ctx.font = '40px Segmento';
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!part.startsWith('&')) {
+                let color;
+                if (parts[i - 1] && parts[i - 1].startsWith('&')) {
+                    color = colorMap[parts[i - 1]];
+                }
+                else
+                    color = [255, 255, 255];
+                part.split('').forEach((char, _index) => {
+                    let symbolColor = color;
+                    if (/^[a-z0-9]+$/i.test(char)) {
+                        symbolColor = modColor(color, -50);
+                        ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                    }
+                    else if (/[+\-/*/^]/.test(char)) {
+                        symbolColor = modColor(color, -25);
+                        ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                    }
+                    else {
+                        ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                    }
+                    ctx.fillText(char, length, 35);
+                    length += ctx.measureText(char).width;
+                });
             }
-            else
-                color = [255, 255, 255];
-            part.split('').forEach((char, _index) => {
-                let symbolColor = color;
-                if (/^[a-z0-9]+$/i.test(char)) {
-                    symbolColor = modColor(color, -50);
-                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
-                }
-                else if (/[+\-/*/^]/.test(char)) {
-                    symbolColor = modColor(color, -25);
-                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
-                }
-                else {
-                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
-                }
-                ctx.fillText(char, length, 35);
-                length += ctx.measureText(char).width;
-            });
         }
-    }
-    return canvas;
+        return canvas;
+    });
 }
 function createColorText(str) {
     let left = [];
@@ -527,40 +527,25 @@ function multilineText(position, text, ctx, maxWidth = 0, wordBreak = false) {
         ctx.fillText(line, position[0], position[1] + lineHeight * index);
     });
 }
-function measureMultilineText(text, font = 'Arial 20px', maxWidth = 0, wordBreak = false) {
-    const originalMaxWidth = maxWidth;
-    let charHeight = (0, utilities_1.measureText)('M', font).width * 1.5;
-    let lineCount = 1;
-    let str = '';
-    let lines = [];
-    let characters;
-    if (wordBreak)
-        characters = text.split(' ');
-    else
-        characters = text.split('');
-    if (maxWidth > 1) {
-        for (let i = 0; i < characters.length; i++) {
-            const length = (0, utilities_1.measureText)(str.replace(/\n/g, '') + characters[i], font).width;
-            if (length > maxWidth) {
-                lines.push(str);
-                lineCount++;
-                str = characters[i];
-            }
-            else {
-                if (str == ' ')
-                    str = '';
-                str += characters[i];
-            }
-        }
-        if (str.length > 0) {
-            lines.push(str);
-            lineCount++;
-        }
-    }
-    return { lineCount: lineCount, height: charHeight * lineCount, lines: lines };
+function createBackgroundGradient(accentColor, accentColor2) {
+    var _a;
+    let canvas = new canvas_1.Canvas(1200, 300);
+    let color = (_a = (0, utilities_1.hexToRgb)(accentColor)) === null || _a === void 0 ? void 0 : _a.map((v) => (0, utilities_1.intMax)(v, 125));
+    console.log(color);
+    let ctx = canvas.getContext('2d');
+    let gradient = ctx.createLinearGradient(0, 0, 1200, 0);
+    gradient.addColorStop(0, `rgb(${color === null || color === void 0 ? void 0 : color.join(',')})`);
+    gradient.addColorStop(1, (0, utilities_1.defaulter)(accentColor2, '#000000'));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1200, 1400);
+    return canvas;
 }
+//console.log(('#ff0000'))
 //colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))');
+fs.writeFileSync(data_1.GetFile.assets + '/images/namecards/backgrounds/test.png', createBackgroundGradient('#ff0000').toBuffer());
+//createNameCard(GetFile.assets + '/images/namecards/backgrounds/default.png').then((can) => {fs.writeFileSync(GetFile.assets + '/images/namecards/backgrounds/test.png', can.toBuffer());})
+//createCard(GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false)
+//createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
 function generateCalculator() {
@@ -756,7 +741,7 @@ class textFormatter {
         console.log(finalArray);
         if (maxWidth > 1) {
             for (let i = 0; i < finalArray.length; i++) {
-                const length = (0, utilities_1.measureText)(str.replace(/&\d/g, '').replace(/\n/g, '') + finalArray[i], this.font).width;
+                const length = this.measureTextWidth(str.replace(/&\d/g, '').replace(/\n/g, '') + finalArray[i]);
                 if (length > maxWidth) {
                     lines.push(str);
                     str = finalArray[i];
@@ -874,28 +859,4 @@ function createGameCard(title, description, icon) {
         fs.writeFileSync('./gamecard.png', canvas.toBuffer());
     });
 }
-<<<<<<< HEAD
-function createBackgroundGradient(accentColor, accentColor2) {
-    var _a;
-    let canvas = new canvas_1.Canvas(1200, 300);
-    let color = (_a = (0, utilities_1.hexToRgb)(accentColor)) === null || _a === void 0 ? void 0 : _a.map((v) => (0, utilities_1.intMax)(v, 125));
-    console.log(color);
-    let ctx = canvas.getContext('2d');
-    let gradient = ctx.createLinearGradient(0, 0, 1200, 0);
-    gradient.addColorStop(0, `rgb(${color === null || color === void 0 ? void 0 : color.join(',')})`);
-    gradient.addColorStop(1, (0, utilities_1.defaulter)(accentColor2, '#000000'));
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1200, 1400);
-    return canvas;
-}
-//console.log(('#ff0000'))
-//colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-fs.writeFileSync(data_1.GetFile.assets + '/images/namecards/backgrounds/test.png', createBackgroundGradient('#ff0000').toBuffer());
-//createNameCard(GetFile.assets + '/images/namecards/backgrounds/default.png').then((can) => {fs.writeFileSync(GetFile.assets + '/images/namecards/backgrounds/test.png', can.toBuffer());})
-//createCard(GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false)
-//createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
-// (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
-// 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
-=======
 createGameCard('Solve the Problem', '((72 / (9 ^ 0.5)) - ((19 + 17) / 2)) + (12 + (36 / (-13 + 15)))', data_1.GetFile.assets + '/icons/math.png');
->>>>>>> 494c127fc07c864a2a9b4dc011809df8a43ce74b

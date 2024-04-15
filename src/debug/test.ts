@@ -447,34 +447,6 @@ function multilineText(position: [number, number], text: string, ctx: CanvasRend
         ctx.fillText(line, position[0], position[1] + lineHeight * index)
     })
 }
-function measureMultilineText(text: string, font = 'Arial 20px', maxWidth = 0, wordBreak = false) {
-    const originalMaxWidth = maxWidth;
-    let charHeight = measureText('M', font).width * 1.5;
-    let lineCount = 1;
-    let str = '';
-    let lines = []
-    let characters;
-    if (wordBreak) characters = text.split(' ');
-    else characters = text.split('');
-    if (maxWidth > 1) {
-        for (let i = 0; i < characters.length; i++) {
-            const length = measureText(str.replace(/\n/g, '') + characters[i], font).width;
-            if (length > maxWidth) {
-                lines.push(str)
-                lineCount++;
-                str = characters[i];
-            } else {
-                if (str == ' ') str = '';
-                str += characters[i];
-            }
-        }
-        if (str.length > 0) {
-            lines.push(str)
-            lineCount++
-        }
-    }
-    return { lineCount: lineCount, height: charHeight * lineCount, lines: lines }
-}
 function createBackgroundGradient(accentColor:string,accentColor2?:string) {
     let canvas = new Canvas(1200, 300);
     let color = hexToRgb(accentColor)?.map((v) => intMax(v,125))
@@ -699,7 +671,7 @@ class textFormatter {
         console.log(finalArray);
         if (maxWidth > 1) {
             for (let i = 0; i < finalArray.length; i++) {
-                const length = measureText(str.replace(/&\d/g, '').replace(/\n/g, '') + finalArray[i], this.font).width;
+                const length = this.measureTextWidth(str.replace(/&\d/g, '').replace(/\n/g, '') + finalArray[i]);
                 if (length > maxWidth) {
                     lines.push(str)
                     str = finalArray[i];

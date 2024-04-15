@@ -12,8 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hexToRgb = exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.intMax = exports.maps = void 0;
-exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.measureText = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.getWord = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.defaulter = exports.isEven = exports.isOdd = exports.MathGenerator = exports.maps = void 0;
+exports.hexToRgb = exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.measureText = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.defaulter = exports.isEven = exports.isOdd = exports.MathGenerator = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.intMax = exports.maps = void 0;
 const canvas_1 = require("canvas");
 const discord_js_1 = require("discord.js");
 const fs_1 = __importDefault(require("fs"));
@@ -59,21 +58,134 @@ function random(min, max) {
     return Math.round(Math.random() * (max - min)) + min;
 }
 exports.random = random;
-function getWord(length) {
-    const words = data_1.GetFile.wordList();
-    const filteredWords = words.filter(word => word.length === length);
-    let randomWord;
-    if (filteredWords.length > 0) {
-        const randomIndex = Math.floor(Math.random() * filteredWords.length);
-        randomWord = filteredWords[randomIndex];
+class MathGenerator {
+    static algGen() {
+        const A = random(-100, 100);
+        const terms = random(3, 10);
+        let randoms = [];
+        let string = "";
+        let final = 0;
+        for (let i = 0; i < terms; i++) {
+            randoms.push(random(-20, 20));
+            let mode = random(1, 2);
+            switch (mode) {
+                case 1:
+                    final += randoms[i] * A;
+                    if (i == terms - 1) {
+                        string += ((i == 0 ? randoms[i] : sign(randoms[i])) + "x = " + final);
+                    }
+                    else {
+                        string += (i == 0 ? randoms[i] : sign(randoms[i])) + "x";
+                    }
+                    break;
+                case 2:
+                    let randomMultiple = randoms[i];
+                    let randomX = random(-3, 3);
+                    let randomConst = random(-10, 10);
+                    if (i == 0) {
+                        string += `${randomMultiple}(${formatter(randomX) + "x"}${sign(randomConst)})`;
+                    }
+                    else {
+                        string += `${sign(randomMultiple)}(${formatter(randomX) + "x"}${sign(randomConst)})`;
+                    }
+                    final += (randomMultiple * A * randomX) + randomConst * randomMultiple;
+                    if (i == terms - 1) {
+                        string += (" = " + final);
+                    }
+                default:
+                    break;
+            }
+        }
+        return [string, A];
     }
-    else {
-        const randomIndex = Math.floor(Math.random() * words.length);
-        randomWord = words[randomIndex];
+    static newStack(number, map, limit, depth) {
+        return this.seperateNumber(number, map, limit, depth);
     }
-    return randomWord;
+    static seperateNumber(number, map, limit, depth) {
+        if (depth == undefined)
+            depth = 0;
+        if (limit == undefined)
+            limit = 1;
+        if (depth > limit)
+            return '' + number;
+        const chance = startChance * ((1 / startChance) ** (depth / limit));
+        let string = '';
+        while (string === '') {
+            if (number < 12 && Math.random() < defaulter(map.get('root'), 0.1)) {
+                string = `(${this.newStack(number ** 2, map, limit, depth + 1)} ^ 0.5)`;
+            }
+            else if (number ** 0.5 == Math.floor(number ** 0.5) && Math.random() < defaulter(map.get('exponentiate'), 0.1)) {
+                string = `(${this.newStack(number ** 0.5, map, limit, depth + 1)} ^ 2)`;
+            }
+            if (Math.random() < chance) {
+                string = `${number}`;
+            }
+            else if (Math.random() < defaulter(map.get('factorize'), 0.1)) {
+                const numFactors = factors(number);
+                if (numFactors.length > 0) {
+                    const factor = numFactors[random(0, numFactors.length - 1)];
+                    string = `(${this.newStack(factor, map, limit, depth + 1)} * ${this.newStack(number / factor, map, limit, depth + 1)})`;
+                }
+            }
+            else if (Math.random() < defaulter(map.get('divide'), 0.1)) {
+                const modifier = random(1, 3);
+                string = `(${this.newStack(modifier * number, map, limit, depth + 1)} / ${this.newStack(modifier, map, limit, depth + 1)})`;
+            }
+            else if (Math.random() < defaulter(map.get('recompose'), 0.1)) {
+                const modifier = random(1, defaulter(map.get('termIntCap'), 20));
+                const operation = random(1, 2);
+                string = `(${this.newStack((operation == 1) ? number + modifier : number - modifier, map, limit, depth + 1)} ${operation == 1 ? '-' : '+'} ${this.newStack(modifier, map, limit, depth + 1)})`;
+            }
+        }
+        return string;
+    }
+    static generateEquation(map) {
+        if (map == undefined)
+            map = new Map();
+        let startNum = random(1, defaulter(map.get('termIntCap'), 20));
+        let string = `${this.seperateNumber(startNum, map, defaulter(map.get('maxDepth'), 5))}`;
+        const terms = random(1, defaulter(map.get('termLimit'), 5));
+        let finalSolution = startNum;
+        for (let i = 0; i < terms; i++) {
+            let term = random(1, 50);
+            if (Math.random() < 0.5) {
+                string += ` + ${this.seperateNumber(term, map, defaulter(map.get('maxDepth'), 5))}`;
+                finalSolution += term;
+            }
+            else {
+                string += ` - ${this.seperateNumber(term, map, defaulter(map.get('maxDepth'), 5))}`;
+                finalSolution -= term;
+            }
+        }
+        return [string, finalSolution];
+    }
 }
-exports.getWord = getWord;
+exports.MathGenerator = MathGenerator;
+// Utility Functions
+function isOdd(num) {
+    return num % 2 == 1;
+}
+exports.isOdd = isOdd;
+function isEven(num) {
+    return num % 2 == 0;
+}
+exports.isEven = isEven;
+function defaulter(obj, def, filter = () => true) {
+    return obj && filter() ? obj : def;
+}
+exports.defaulter = defaulter;
+function toRad(degrees) {
+    return (degrees * Math.PI) / 180;
+}
+function factors(num) {
+    let factors = [];
+    for (let i = 2; i <= num / 2 - 1; i++) {
+        if (num % i === 0) {
+            factors.push(i);
+        }
+    }
+    return factors;
+}
 function numberedStringArraySingle(item, index) {
     let strings = ["🥇 ", "🥈 ", "🥉 "];
     if (strings[index])
@@ -113,131 +225,6 @@ function formatter(number) {
     string += number;
     return string;
 }
-function algGen() {
-    const A = random(-100, 100);
-    const terms = random(3, 10);
-    let randoms = [];
-    let string = "";
-    let final = 0;
-    // xR1 + xR2 + xR3... = AR1 + AR2 + AR3...
-    for (let i = 0; i < terms; i++) {
-        randoms.push(random(-20, 20));
-        let mode = random(1, 2);
-        switch (mode) {
-            case 1:
-                final += randoms[i] * A;
-                if (i == terms - 1) {
-                    string += ((i == 0 ? randoms[i] : sign(randoms[i])) + "x = " + final);
-                }
-                else {
-                    string += (i == 0 ? randoms[i] : sign(randoms[i])) + "x";
-                }
-                break;
-            case 2:
-                let randomMultiple = randoms[i];
-                let randomX = random(-3, 3);
-                let randomConst = random(-10, 10);
-                if (i == 0) {
-                    string += `${randomMultiple}(${formatter(randomX) + "x"}${sign(randomConst)})`;
-                }
-                else {
-                    string += `${sign(randomMultiple)}(${formatter(randomX) + "x"}${sign(randomConst)})`;
-                }
-                final += (randomMultiple * A * randomX) + randomConst * randomMultiple;
-                if (i == terms - 1) {
-                    string += (" = " + final);
-                }
-            default:
-                break;
-        }
-    }
-    return [string, A];
-}
-exports.algGen = algGen;
-function isOdd(num) {
-    return num % 2 == 1;
-}
-exports.isOdd = isOdd;
-function isEven(num) {
-    return num % 2 == 0;
-}
-exports.isEven = isEven;
-function defaulter(obj, def, filter = () => true) {
-    return obj && filter() ? obj : def;
-}
-exports.defaulter = defaulter;
-function factors(num) {
-    let factors = [];
-    for (let i = 2; i <= num / 2 - 1; i++) {
-        if (num % i === 0) {
-            factors.push(i);
-        }
-    }
-    return factors;
-}
-function newStack(number, map, limit, depth) {
-    return seperateNumber(number, map, limit, depth);
-}
-function seperateNumber(number, map, limit, depth) {
-    if (depth == undefined)
-        depth = 0;
-    if (limit == undefined)
-        limit = 1;
-    if (depth > limit)
-        return '' + number;
-    const chance = startChance * ((1 / startChance) ** (depth / limit));
-    let string = '';
-    while (string === '') {
-        if (number < 12 && Math.random() < defaulter(map.get('root'), 0.1)) {
-            string = `(${newStack(number ** 2, map, limit, depth + 1)} ^ 0.5)`;
-        }
-        else if (number ** 0.5 == Math.floor(number ** 0.5) && Math.random() < defaulter(map.get('exponentiate'), 0.1)) {
-            string = `(${newStack(number ** 0.5, map, limit, depth + 1)} ^ 2)`;
-        }
-        if (Math.random() < chance) {
-            string = `${number}`;
-        }
-        else if (Math.random() < defaulter(map.get('factorize'), 0.1)) {
-            const numFactors = factors(number);
-            if (numFactors.length > 0) {
-                const factor = numFactors[random(0, numFactors.length - 1)];
-                string = `(${newStack(factor, map, limit, depth + 1)} * ${newStack(number / factor, map, limit, depth + 1)})`;
-            }
-        }
-        else if (Math.random() < defaulter(map.get('divide'), 0.1)) {
-            const modifier = random(1, 3);
-            string = `(${newStack(modifier * number, map, limit, depth + 1)} / ${newStack(modifier, map, limit, depth + 1)})`;
-        }
-        else if (Math.random() < defaulter(map.get('recompose'), 0.1)) {
-            const modifier = random(1, defaulter(map.get('termIntCap'), 20));
-            const operation = random(1, 2);
-            string = `(${newStack((operation == 1) ? number + modifier : number - modifier, map, limit, depth + 1)} ${operation == 1 ? '-' : '+'} ${newStack(modifier, map, limit, depth + 1)})`;
-        }
-    }
-    //@ts-ignore
-    return string;
-}
-function generateEquation(map) {
-    if (map == undefined)
-        map = new Map();
-    let startNum = random(1, defaulter(map.get('termIntCap'), 20));
-    let string = `${seperateNumber(startNum, map, defaulter(map.get('maxDepth'), 5))}`;
-    const terms = random(1, defaulter(map.get('termLimit'), 5));
-    let finalSolution = startNum;
-    for (let i = 0; i < terms; i++) {
-        let term = random(1, 50);
-        if (Math.random() < 0.5) {
-            string += ` + ${seperateNumber(term, map, defaulter(map.get('maxDepth'), 5))}`;
-            finalSolution += term;
-        }
-        else {
-            string += ` - ${seperateNumber(term, map, defaulter(map.get('maxDepth'), 5))}`;
-            finalSolution -= term;
-        }
-    }
-    return [string, finalSolution];
-}
-exports.generateEquation = generateEquation;
 function createBackgroundImage(url_1) {
     return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
@@ -677,8 +664,8 @@ function getWord(length) {
     return randomWord;
 }
 exports.getWord = getWord;
-function getNamecard(gUser, data, rank, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getNamecard(gUser_1, data_2, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (gUser, data, rank, resolution = 1) {
         let user;
         let gUser2;
         if (gUser instanceof discord_js_1.User) {
@@ -697,7 +684,7 @@ function getNamecard(gUser, data, rank, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let context = canvas.getContext('2d');
         context.fillStyle = hexColor;
-        context.drawImage(yield (0, canvas_1.loadImage)((yield createNameCard()).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
+        context.drawImage(yield (0, canvas_1.loadImage)((yield createNameCard('')).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
         context.globalCompositeOperation = 'destination-over';
         // Avatar PFP
         let avatarCanvas = new canvas_1.Canvas(260 * resolution, 260 * resolution);
@@ -731,7 +718,7 @@ function getNamecard(gUser, data, rank, resolution = 1) {
 }
 exports.getNamecard = getNamecard;
 function modColor(color, modifier) {
-    let newColor = color.map((value) => {
+    let newColor = color.map((value, index) => {
         let newValue = value + modifier;
         if (newValue > 255)
             newValue = 255;

@@ -170,40 +170,6 @@ function factors(num: number): number[] {
     }
     return factors;
 }
-export function getRandomObject<T>(array: T[]): T {
-    const randomIndex = Math.floor(Math.random() * array.length);
-    return array[randomIndex];
-}
-export function isSqrt(value: number) {
-    return ((value ** 0.5) == Math.floor(value ** 0.5) ? true : false)
-}
-export function multiples(num: number) {
-    let multiples: any[] = []
-    for (let i = 0; i < num; i++) {
-        const result = num / i
-        if ((result - Math.floor(result) == 0)) {
-            multiples.push(result)
-        }
-    }
-    return multiples
-}
-export function random(min: number, max: number) {
-    if (min > max) return min;
-    return Math.round(Math.random() * (max - min)) + min
-}
-export function getWord(length: number) {
-    const words = GetFile.wordList()
-    const filteredWords = words.filter(word => word.length === length);
-    let randomWord
-    if (filteredWords.length > 0) {
-        const randomIndex = Math.floor(Math.random() * filteredWords.length);
-        randomWord = filteredWords[randomIndex];
-    } else {
-        const randomIndex = Math.floor(Math.random() * words.length);
-        randomWord = words[randomIndex]
-    }
-    return randomWord;
-}
 export function numberedStringArraySingle(item: string, index: number) {
     let strings = ["🥇 ", "🥈 ", "🥉 "];
     if (strings[index]) return `${strings[index]}${item}`;
@@ -657,7 +623,7 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     let canvas = new Canvas(1200 * resolution, 300 * resolution);
     let context = canvas.getContext('2d');
     context.fillStyle = hexColor;
-    context.drawImage(await loadImage((await createNameCard()).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
+    context.drawImage(await loadImage((await createNameCard('')).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
     context.globalCompositeOperation = 'destination-over';
     // Avatar PFP
     let avatarCanvas = new Canvas(260 * resolution, 260 * resolution);
