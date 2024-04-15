@@ -1,6 +1,6 @@
 import { Canvas, loadImage } from "canvas";
 import path from 'path'
-import { ActionRowBuilder, ComponentType, EmbedBuilder, GuildMember, Message, StringSelectMenuBuilder, StringSelectMenuInteraction, TextChannel, User } from "discord.js";
+import { ActionRowBuilder, ColorResolvable, ComponentType, EmbedBuilder, GuildMember, Message, StringSelectMenuBuilder, StringSelectMenuInteraction, TextChannel, User } from "discord.js";
 import { RgbPixel } from "quantize";
 import EventEmitter from 'events';
 import fs from 'fs'
@@ -14,6 +14,9 @@ export let maps = {
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
     hard: new Map().set('recompose', 0.1).set('factorize', 0.2).set('divide', 0.2).set('exponentiate', 0.3).set('root', 0.3).set('maxDivision', 15).set('termIntCap', 50).set('maxDepth', 4).set('termLimit', 1)
 };
+export function intMax(int: number, max: number) {
+    return defaulter(int, max, () => int > max)
+}
 export function getRandomObject<T>(array: T[]): T {
     const randomIndex = Math.floor(Math.random() * array.length);
     return array[randomIndex];
@@ -140,11 +143,8 @@ export function isOdd(num: number) {
 export function isEven(num: number) {
     return num % 2 == 0
 }
-export function defaulter<T>(str: T | undefined, def: T) {
-    if (str == undefined) {
-        console.log('value defaulted ' + def)
-    }
-    return str ? str : def
+export function defaulter<T>(obj: T | undefined, def: T, filter: () => boolean = () => true) {
+    return obj&&filter() ? obj : def
 }
 function factors(num: number): number[] {
     let factors = [];
@@ -257,18 +257,16 @@ async function createTemplate(url: string, resolution = 1) {
     ctx.stroke();
     return canvas;
 }
-export async function createNameCard(url: string, resolution = 1) {
-    //try {
-    //    await loadImage(url)
-    //} catch (error) {
-    //    url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&"
-    //}
-    const dataPath = path.join(__dirname, '../assets/images/namecards/namecard.png')
-    url = "../assets/images/namecards/namecard.png"
+export async function createNameCard(url: string, accentColor?: string, resolution = 1) {
+    try {
+        await loadImage(url)
+    } catch (error) {
+        url = GetFile.assets + '/images/namecards/backgrounds/default.png'
+    }
     let canvas = new Canvas(1200, 300);
     let ctx = canvas.getContext('2d');
-    ctx.drawImage(await createBackgroundImage(dataPath, resolution), 0, 0, 1200, 300)
-    ctx.drawImage(await createTemplate(dataPath, resolution), 0, 0, 1200, 300)
+    ctx.drawImage(await createBackgroundImage(url, resolution), 0, 0, 1200, 300)
+    ctx.drawImage(await createTemplate(url, resolution), 0, 0, 1200, 300)
     return canvas;
 }
 function toRad(degrees: number): number {
@@ -750,4 +748,10 @@ export function createColorText(str: string) {
         return char;
     }).join('');
     return colorEncoder(modifiedStr);
+}
+export function hexToRgb(hex:string) {
+    var res = hex.match(/[a-f0-9]{2}/gi);
+    return res && res.length === 3
+      ? res.map(function(v) { return parseInt(v, 16) })
+      : null;
 }

@@ -33,7 +33,7 @@ class cards extends commands_1.baseCommand {
             let user = this.serverManager.getMemberManager(discordUser.id).getUserManager();
             let cards = user.getCards().sort((a, b) => a - b);
             if (cards.length < 1) {
-                interaction.editReply({ content: 'You have no cards to display.' });
+                interaction.editReply({ content: 'There are no cards to display.' });
                 return false;
             }
             let cardvas = (0, utilities_1.createCatalog)(cards);

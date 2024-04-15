@@ -4,7 +4,7 @@
   "description": "",
   "main": "/build/main.js",
   "scripts": {
-    "test": "tsc && node build/debug/test.js",
+    "runtest": "tsc && node build/debug/test.js",
     "start": "tsc && node build/index.js",
     "cleanExport": "rm -f build.zip && tsc && zip -r build.zip ./build && zip -d build.zip ./build/assets && zip -ur build.zip ./package.json",
     "fullExport": "rm -f build.zip && tsc && zip -r build.zip ./build && zip -ur build.zip ./package.json"

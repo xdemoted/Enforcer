@@ -107,21 +107,6 @@ function createTemplate(url) {
         return canvas;
     });
 }
-function createNameCard(url) {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            yield (0, canvas_1.loadImage)(url);
-        }
-        catch (error) {
-            url = data_1.GetFile.assets + "/images/namecards/namecard.png";
-        }
-        let canvas = new canvas_1.Canvas(1200, 300);
-        let ctx = canvas.getContext('2d');
-        ctx.drawImage(yield createBackgroundImage(url), 0, 0, 1200, 300);
-        ctx.drawImage(yield createTemplate(url), 0, 0, 1200, 300);
-        fs.writeFileSync('./newcard.png', canvas.toBuffer());
-    });
-}
 function getPalette(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const quality = 10;
@@ -516,8 +501,24 @@ function createColorText(str) {
         colorEncoder(modifiedStr);
     });
 }
+function createBackgroundGradient(accentColor, accentColor2) {
+    var _a;
+    let canvas = new canvas_1.Canvas(1200, 300);
+    let color = (_a = (0, utilities_1.hexToRgb)(accentColor)) === null || _a === void 0 ? void 0 : _a.map((v) => (0, utilities_1.intMax)(v, 125));
+    console.log(color);
+    let ctx = canvas.getContext('2d');
+    let gradient = ctx.createLinearGradient(0, 0, 1200, 0);
+    gradient.addColorStop(0, `rgb(${color === null || color === void 0 ? void 0 : color.join(',')})`);
+    gradient.addColorStop(1, (0, utilities_1.defaulter)(accentColor2, '#000000'));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1200, 1400);
+    return canvas;
+}
+//console.log(('#ff0000'))
 //colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-createCard(data_1.GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false);
+fs.writeFileSync(data_1.GetFile.assets + '/images/namecards/backgrounds/test.png', createBackgroundGradient('#ff0000').toBuffer());
+//createNameCard(GetFile.assets + '/images/namecards/backgrounds/default.png').then((can) => {fs.writeFileSync(GetFile.assets + '/images/namecards/backgrounds/test.png', can.toBuffer());})
+//createCard(GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false)
 //createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30

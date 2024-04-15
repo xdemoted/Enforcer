@@ -67,12 +67,22 @@ class xp extends commands_1.baseCommand {
 }
 xp.command = {
     "name": "card",
-    "description": "Run this manage user xp.",
+    "description": "Run this to manage user xp.",
     "options": [
+        {
+            "type": 3,
+            "name": "type",
+            "description": "Specify the type of action"
+        },
         {
             "type": 6,
             "name": "user",
             "description": "Specify which user"
+        },
+        {
+            "type": 4,
+            "name": "amount",
+            "description": "Specify the amount of xp"
         }
     ]
 };

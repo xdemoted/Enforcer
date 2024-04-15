@@ -2,7 +2,7 @@ import can, { Canvas, CanvasGradient, loadImage } from "canvas";
 var quantize = require('quantize');
 import * as fs from "fs";
 import { RgbPixel } from "quantize";
-import { ContextUtilities, cardDraw, openChestGif, random } from "../modules/utilities";
+import { ContextUtilities, cardDraw, createNameCard, defaulter, hexToRgb, intMax, openChestGif, random } from "../modules/utilities";
 import { GetFile, TradecardManifest, namecardManifest } from "../modules/data";
 import { randomInt } from "crypto"
 import GifEncoder from "gifencoder";
@@ -69,18 +69,6 @@ async function createTemplate(url: string) {
     ctx.arc(350, 225, 25 + offset, Math.PI / 2, -Math.PI / 2);
     ctx.stroke();
     return canvas;
-}
-async function createNameCard(url: string) {
-    try {
-        await loadImage(url)
-    } catch (error) {
-        url = GetFile.assets + "/images/namecards/namecard.png"
-    }
-    let canvas = new Canvas(1200, 300);
-    let ctx = canvas.getContext('2d');
-    ctx.drawImage(await createBackgroundImage(url), 0, 0, 1200, 300)
-    ctx.drawImage(await createTemplate(url), 0, 0, 1200, 300)
-    fs.writeFileSync('./newcard.png', canvas.toBuffer());
 }
 async function getPalette(url: string) {
     const quality = 10;
@@ -434,8 +422,23 @@ async function createColorText(str: string) {
     }).join('');
     colorEncoder(modifiedStr);
 }
+function createBackgroundGradient(accentColor:string,accentColor2?:string) {
+    let canvas = new Canvas(1200, 300);
+    let color = hexToRgb(accentColor)?.map((v) => intMax(v,125))
+    console.log(color)
+    let ctx = canvas.getContext('2d');
+    let gradient = ctx.createLinearGradient(0, 0, 1200, 0);
+    gradient.addColorStop(0, `rgb(${color?.join(',')})`);
+    gradient.addColorStop(1, defaulter(accentColor2,'#000000'));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 1200, 1400);
+    return canvas;
+}
+//console.log(('#ff0000'))
 //colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-createCard(GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false)
+fs.writeFileSync(GetFile.assets + '/images/namecards/backgrounds/test.png',createBackgroundGradient('#ff0000').toBuffer())
+//createNameCard(GetFile.assets + '/images/namecards/backgrounds/default.png').then((can) => {fs.writeFileSync(GetFile.assets + '/images/namecards/backgrounds/test.png', can.toBuffer());})
+//createCard(GetFile.assets + '/shotgun.png', 'e', [0, (0) / 2], 1, 'h', false)
 //createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30

@@ -12,9 +12,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.maps = void 0;
+exports.hexToRgb = exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.intMax = exports.maps = void 0;
 const canvas_1 = require("canvas");
-const path_1 = __importDefault(require("path"));
 const discord_js_1 = require("discord.js");
 const events_1 = __importDefault(require("events"));
 const fs_1 = __importDefault(require("fs"));
@@ -28,6 +27,10 @@ exports.maps = {
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
     hard: new Map().set('recompose', 0.1).set('factorize', 0.2).set('divide', 0.2).set('exponentiate', 0.3).set('root', 0.3).set('maxDivision', 15).set('termIntCap', 50).set('maxDepth', 4).set('termLimit', 1)
 };
+function intMax(int, max) {
+    return defaulter(int, max, () => int > max);
+}
+exports.intMax = intMax;
 function getRandomObject(array) {
     const randomIndex = Math.floor(Math.random() * array.length);
     return array[randomIndex];
@@ -159,11 +162,8 @@ function isEven(num) {
     return num % 2 == 0;
 }
 exports.isEven = isEven;
-function defaulter(str, def) {
-    if (str == undefined) {
-        console.log('value defaulted ' + def);
-    }
-    return str ? str : def;
+function defaulter(obj, def, filter = () => true) {
+    return obj && filter() ? obj : def;
 }
 exports.defaulter = defaulter;
 function factors(num) {
@@ -291,19 +291,18 @@ function createTemplate(url_1) {
         return canvas;
     });
 }
-function createNameCard(url_1) {
-    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
-        //try {
-        //    await loadImage(url)
-        //} catch (error) {
-        //    url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&"
-        //}
-        const dataPath = path_1.default.join(__dirname, '../assets/images/namecards/namecard.png');
-        url = "../assets/images/namecards/namecard.png";
+function createNameCard(url_1, accentColor_1) {
+    return __awaiter(this, arguments, void 0, function* (url, accentColor, resolution = 1) {
+        try {
+            yield (0, canvas_1.loadImage)(url);
+        }
+        catch (error) {
+            url = data_1.GetFile.assets + '/images/namecards/backgrounds/default.png';
+        }
         let canvas = new canvas_1.Canvas(1200, 300);
         let ctx = canvas.getContext('2d');
-        ctx.drawImage(yield createBackgroundImage(dataPath, resolution), 0, 0, 1200, 300);
-        ctx.drawImage(yield createTemplate(dataPath, resolution), 0, 0, 1200, 300);
+        ctx.drawImage(yield createBackgroundImage(url, resolution), 0, 0, 1200, 300);
+        ctx.drawImage(yield createTemplate(url, resolution), 0, 0, 1200, 300);
         return canvas;
     });
 }
@@ -830,3 +829,10 @@ function createColorText(str) {
     return colorEncoder(modifiedStr);
 }
 exports.createColorText = createColorText;
+function hexToRgb(hex) {
+    var res = hex.match(/[a-f0-9]{2}/gi);
+    return res && res.length === 3
+        ? res.map(function (v) { return parseInt(v, 16); })
+        : null;
+}
+exports.hexToRgb = hexToRgb;
