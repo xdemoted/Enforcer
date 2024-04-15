@@ -1,9 +1,10 @@
-import { Client, EmbedBuilder, MessageCollector, StringSelectMenuInteraction, TextChannel, InteractionCollector, CacheType, Message, AttachmentBuilder, MessageComponentInteraction, CollectedInteraction, Interaction } from 'discord.js';
+import { Client, EmbedBuilder, MessageCollector, TextChannel, InteractionCollector, Message, AttachmentBuilder, Interaction } from 'discord.js';
 import data, { GetFile, MessageManager, eventEmitter } from './data';
 import { cardDraw, openChestGif, random } from './utilities';
 import fs from 'fs'
 import quizbowl from './games/special/quizbowl';
-import { RunTimeEvents, RunTimeEventsDebug } from './RunTimeEvents';
+import { RunTimeEvents } from './RunTimeEvents';
+import countChannel from './games/special/counting';
 export type GameValues = { guildId: string, currentValue: string, reward: number, type: number }
 type BaseGameClass = (new (client: Client, channel: TextChannel) => baseGame)
 export interface baseGame {
@@ -11,7 +12,7 @@ export interface baseGame {
     emit(event: 'correctanswer', msg: Message | Interaction, reward: number): boolean;
 }
 
-let debug = 'math.js'
+let debug:undefined|string// = 'math.js'
 export class baseGame extends eventEmitter {
     client: Client;
     channel: TextChannel;
@@ -31,15 +32,16 @@ export class baseGame extends eventEmitter {
 export default class GameManager {
     client: Client;
     runnableGames: BaseGameClass[] = []
-    guilds: { [guildId: string]: { mainChan: TextChannel | false, maniaChan: TextChannel | false, quizbowlChan: TextChannel | false, game: baseGame | undefined, quizbowl: quizbowl | undefined } } = {}
+    guilds: { [guildId: string]: { mainChan: TextChannel | false, maniaChan: TextChannel | false, quizbowlChan: TextChannel | false, game: baseGame | undefined, quizbowl: quizbowl | undefined, countChannel: countChannel | undefined } } = {}
     constructor(client: Client) {
         this.client = client;
         this.init()
     }
     init() {
-        let gamesList = fs.readdirSync(GetFile.gamePath + "/hourly")
-        if (debug) gamesList = [debug]
-        for (let game of gamesList) {
+        let hourlyList = fs.readdirSync(GetFile.gamePath + "/hourly")
+        let specialList = fs.readdirSync(GetFile.gamePath + "/special")
+        if (debug) hourlyList = [debug]
+        for (let game of hourlyList) {
             if (!game.endsWith('.js')) continue
             let gameClass: BaseGameClass = require(`${GetFile.gamePath}/hourly/${game}`).default
             this.runnableGames.push(gameClass)
@@ -49,10 +51,11 @@ export default class GameManager {
         for (let guild in guilds) {
             let i = guilds[guild].id
             let guildData = this.guilds[guild]
-            guildData = { mainChan: false, maniaChan: false, quizbowlChan: false, game: undefined, quizbowl: undefined }
+            guildData = { mainChan: false, maniaChan: false, quizbowlChan: false, game: undefined, quizbowl: undefined, countChannel: undefined }
             let mainChan = guilds[guild].settings.mainChannel
             let maniaChan = guilds[guild].settings.maniaChannel
             let quizbowlChan = guilds[guild].settings.qbChannel
+            let countChan = guilds[guild].settings.countChannel
             if (mainChan) {
                 let channel = this.client.channels.cache.get(mainChan)
                 if (channel instanceof TextChannel) {
@@ -71,9 +74,15 @@ export default class GameManager {
                     guildData.quizbowlChan = channel
                 }
             }
+            if (countChan) {
+                let channel = this.client.channels.cache.get(countChan?countChan:'false')
+                if (channel instanceof TextChannel) {
+                    guildData.countChannel = new countChannel(this.client, channel.id)
+                }
+            }
             this.guilds[i] = guildData
         }
-        runtime.on('daily', (current) => {
+        runtime.on('daily', () => {
             for (let guild in this.guilds) {
                 let guildData = this.guilds[guild]
                 if (guildData.quizbowlChan) {
@@ -113,13 +122,13 @@ export default class GameManager {
         user.userManager.addXP(reward)
         user.userManager.addGems(gemReward)
         let card = cardDraw(false)
-        if (card) {
+        if (card&&msg.member) {
             user.getUserManager().addCard(card.id)
             let loading = new AttachmentBuilder(fs.readFileSync(GetFile.assets + "/images/loading88px.gif"), { name: "loading.gif" })
             let rewardMsg = await msg.channel?.send({ files: [loading] })
             let attachment = new AttachmentBuilder(await openChestGif(card.background, card.rank), { name: "chestopen.gif" })
             let embed = new EmbedBuilder()
-                .setTitle('Reward')
+                .setTitle(`${msg.member.user.username}'s Reward`)
                 .setDescription(`Lucky you! Received a "${card.title}" card!\n+${gemReward} gems, +${Math.round(reward / 10)} coins, +${reward} xp`)
                 .setImage(`attachment://chestopen.gif`)
             await rewardMsg?.edit({ embeds: [embed], files: [attachment] })

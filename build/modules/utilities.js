@@ -13,15 +13,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hexToRgb = exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getWord = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.ChannelInteractionCollector = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.generateEquation = exports.defaulter = exports.isEven = exports.isOdd = exports.algGen = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.intMax = exports.maps = void 0;
+exports.createColorText = exports.colorEncoder = exports.getNamecard = exports.getLeaderCard = exports.openChestGif = exports.createCatalog = exports.addFrame = exports.cardDraw = exports.ContextUtilities = exports.measureText = exports.DialogueOption = exports.Dialogue = exports.DialogueSelectMenu = exports.DialogueRowBuilder = exports.createNameCard = exports.stringMax = exports.numberedStringArray = exports.numberedStringArraySingle = exports.getWord = exports.random = exports.multiples = exports.isSqrt = exports.getRandomObject = exports.defaulter = exports.isEven = exports.isOdd = exports.MathGenerator = exports.maps = void 0;
 const canvas_1 = require("canvas");
 const discord_js_1 = require("discord.js");
-const events_1 = __importDefault(require("events"));
 const fs_1 = __importDefault(require("fs"));
 const crypto_1 = require("crypto");
 const data_1 = require("./data");
 const gifencoder_1 = __importDefault(require("gifencoder"));
 var quantize = require('quantize');
+// Stored Objects
 const startChance = 0.01;
+const valueMap = { "+": 10, "-": 20, "*": 30, "/": 40 };
 exports.maps = {
     easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 1).set('termLimit', 1),
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
@@ -57,6 +59,21 @@ function random(min, max) {
     return Math.round(Math.random() * (max - min)) + min;
 }
 exports.random = random;
+function getWord(length) {
+    const words = data_1.GetFile.wordList();
+    const filteredWords = words.filter(word => word.length === length);
+    let randomWord;
+    if (filteredWords.length > 0) {
+        const randomIndex = Math.floor(Math.random() * filteredWords.length);
+        randomWord = filteredWords[randomIndex];
+    }
+    else {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        randomWord = words[randomIndex];
+    }
+    return randomWord;
+}
+exports.getWord = getWord;
 function numberedStringArraySingle(item, index) {
     let strings = ["🥇 ", "🥈 ", "🥉 "];
     if (strings[index])
@@ -78,27 +95,10 @@ function stringMax(str, max) {
     return str.length > max ? str.slice(0, max - 3) + '...' : str;
 }
 exports.stringMax = stringMax;
-let valueMap = { "+": 10, "-": 20, "*": 30, "/": 40 };
-function getSign(vm) {
-    let value = undefined;
-    while (value == undefined) {
-        if (Math.random() < vm["+"]) {
-            value = ['+', valueMap["+"]];
-        }
-        else if (Math.random() < vm["-"]) {
-            value = ['-', valueMap["-"]];
-        }
-        else if (Math.random() < vm["*"]) {
-            value = ['*', valueMap["*"]];
-        }
-    }
-    return value;
-}
 function sign(number) {
     return ((number < 0) ? " - " : " + ") + Math.abs(number);
 }
 function formatter(number) {
-    let num = number;
     let string = "";
     if (number < 0) {
         number *= -1;
@@ -307,9 +307,6 @@ function createNameCard(url_1, accentColor_1) {
     });
 }
 exports.createNameCard = createNameCard;
-function toRad(degrees) {
-    return (degrees * Math.PI) / 180;
-}
 function getPalette(url) {
     return __awaiter(this, void 0, void 0, function* () {
         const quality = 10;
@@ -434,23 +431,13 @@ class DialogueOption extends Dialogue {
     }
 }
 exports.DialogueOption = DialogueOption;
-class ChannelInteractionCollector extends events_1.default {
-    constructor(channel, filter = () => { return true; }) {
-        super();
-        //this.channel = channel;
-        this.filter = filter;
-        this.index = channel.client.listeners('interactionCreate').length - 1;
-        channel.client.on('interactionCreate', (interaction) => {
-            if (interaction.channelId == channel.id && filter()) {
-                this.emit('interaction', interaction);
-            }
-        });
-    }
-    end() {
-        this.removeListener('interactionCreate', this.listeners('interactionCreate')[this.index]);
-    }
+function measureText(text, font) {
+    let canvas = new canvas_1.Canvas(1, 1);
+    let ctx = canvas.getContext('2d');
+    ctx.font = font;
+    return ctx.measureText(text);
 }
-exports.ChannelInteractionCollector = ChannelInteractionCollector;
+exports.measureText = measureText;
 class ContextUtilities {
     constructor(context) {
         this.context = context;
@@ -463,18 +450,19 @@ class ContextUtilities {
         this.context.fillStyle = gradient;
         return this;
     }
-    roundedRect(x, y, width, height, radius, ctx = this.context) {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.arcTo(x + width, y, x + width, y + height, radius);
-        ctx.arcTo(x + width, y + height, x, y + height, radius);
-        this.context.arcTo(x, y + height, x, y, radius);
-        this.context.arcTo(x, y, x + width, y, radius);
+    roundedRect(x, y, width, height, radius, lineWidth = 0) {
+        this.context.beginPath();
+        this.context.lineWidth = lineWidth;
+        this.context.moveTo(x + radius + lineWidth / 2, y + lineWidth / 2);
+        this.context.arcTo(x + width - lineWidth / 2, y + lineWidth / 2, x + width - lineWidth / 2, y + height - lineWidth / 2, radius);
+        this.context.arcTo(x + width - lineWidth / 2, y + height - lineWidth / 2, x + lineWidth / 2, y + height - lineWidth / 2, radius);
+        this.context.arcTo(x + lineWidth / 2, y + height - lineWidth / 2, x + lineWidth / 2, y + lineWidth / 2, radius);
+        this.context.arcTo(x + lineWidth / 2, y + lineWidth / 2, x + width - lineWidth / 2, y + lineWidth / 2, radius);
         this.context.closePath();
         return this;
     }
     roundedBorder(x, y, width, height, radius, lineWidth, ctx = this.context) {
-        this.roundedRect(x + lineWidth / 2, y + lineWidth / 2, width - lineWidth, height - lineWidth, radius, ctx);
+        this.roundedRect(x + lineWidth / 2, y + lineWidth / 2, width - lineWidth, height - lineWidth, radius);
         return this;
     }
     borderOutline(x, y, width, height, radius, lineWidth, ctx = this.context) {
@@ -689,8 +677,8 @@ function getWord(length) {
     return randomWord;
 }
 exports.getWord = getWord;
-function getNamecard(gUser_1, data_2, rank_1) {
-    return __awaiter(this, arguments, void 0, function* (gUser, data, rank, resolution = 1) {
+function getNamecard(gUser, data, rank, resolution = 1) {
+    return __awaiter(this, void 0, void 0, function* () {
         let user;
         let gUser2;
         if (gUser instanceof discord_js_1.User) {
@@ -709,7 +697,7 @@ function getNamecard(gUser_1, data_2, rank_1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let context = canvas.getContext('2d');
         context.fillStyle = hexColor;
-        context.drawImage(yield (0, canvas_1.loadImage)((yield createNameCard(gUser2.namecard)).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
+        context.drawImage(yield (0, canvas_1.loadImage)((yield createNameCard()).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
         context.globalCompositeOperation = 'destination-over';
         // Avatar PFP
         let avatarCanvas = new canvas_1.Canvas(260 * resolution, 260 * resolution);
@@ -743,7 +731,7 @@ function getNamecard(gUser_1, data_2, rank_1) {
 }
 exports.getNamecard = getNamecard;
 function modColor(color, modifier) {
-    let newColor = color.map((value, index) => {
+    let newColor = color.map((value) => {
         let newValue = value + modifier;
         if (newValue > 255)
             newValue = 255;
@@ -753,6 +741,7 @@ function modColor(color, modifier) {
     });
     return newColor;
 }
+// Color Text
 function colorEncoder(str) {
     const colorMap = { "&f": [255, 255, 255], "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
     const regex = /&\d/g;

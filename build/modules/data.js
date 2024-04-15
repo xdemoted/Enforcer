@@ -28,6 +28,7 @@ GetFile.assets = path_1.default.join(__dirname, '../assets');
 GetFile.namecardPath = _a.assets + '/images/namecards/manifest.json';
 GetFile.tradecardPath = _a.assets + "/images/tradecards/manifest.json";
 GetFile.serverPath = _a.assets + "/stored/data.json";
+GetFile.settingPath = _a.assets + "/stored/settings.json";
 GetFile.commandPath = path_1.default.join(__dirname, './commands');
 GetFile.gamePath = path_1.default.join(__dirname, './games');
 GetFile.namecardManifest = () => {
@@ -189,6 +190,7 @@ class GuildSettings {
         this.gameThread = false;
         this.gameToggle = false;
         this.leaderboard = false;
+        this.countChannel = false;
         this.gameDelay = 0;
     }
 }
@@ -199,6 +201,7 @@ class Guild {
         this.members = [];
         this.xp = 0;
         this.settings = new GuildSettings();
+        this.count = 0;
     }
 }
 exports.Guild = Guild;

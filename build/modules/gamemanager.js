@@ -42,7 +42,8 @@ const utilities_1 = require("./utilities");
 const fs_1 = __importDefault(require("fs"));
 const quizbowl_1 = __importDefault(require("./games/special/quizbowl"));
 const RunTimeEvents_1 = require("./RunTimeEvents");
-let debug = 'math.js';
+const counting_1 = __importDefault(require("./games/special/counting"));
+let debug; // = 'math.js'
 class baseGame extends data_1.eventEmitter {
     constructor(client, channel) {
         super();
@@ -65,10 +66,11 @@ class GameManager {
         this.init();
     }
     init() {
-        let gamesList = fs_1.default.readdirSync(data_1.GetFile.gamePath + "/hourly");
+        let hourlyList = fs_1.default.readdirSync(data_1.GetFile.gamePath + "/hourly");
+        let specialList = fs_1.default.readdirSync(data_1.GetFile.gamePath + "/special");
         if (debug)
-            gamesList = [debug];
-        for (let game of gamesList) {
+            hourlyList = [debug];
+        for (let game of hourlyList) {
             if (!game.endsWith('.js'))
                 continue;
             let gameClass = require(`${data_1.GetFile.gamePath}/hourly/${game}`).default;
@@ -79,10 +81,11 @@ class GameManager {
         for (let guild in guilds) {
             let i = guilds[guild].id;
             let guildData = this.guilds[guild];
-            guildData = { mainChan: false, maniaChan: false, quizbowlChan: false, game: undefined, quizbowl: undefined };
+            guildData = { mainChan: false, maniaChan: false, quizbowlChan: false, game: undefined, quizbowl: undefined, countChannel: undefined };
             let mainChan = guilds[guild].settings.mainChannel;
             let maniaChan = guilds[guild].settings.maniaChannel;
             let quizbowlChan = guilds[guild].settings.qbChannel;
+            let countChan = guilds[guild].settings.countChannel;
             if (mainChan) {
                 let channel = this.client.channels.cache.get(mainChan);
                 if (channel instanceof discord_js_1.TextChannel) {
@@ -101,9 +104,15 @@ class GameManager {
                     guildData.quizbowlChan = channel;
                 }
             }
+            if (countChan) {
+                let channel = this.client.channels.cache.get(countChan ? countChan : 'false');
+                if (channel instanceof discord_js_1.TextChannel) {
+                    guildData.countChannel = new counting_1.default(this.client, channel.id);
+                }
+            }
             this.guilds[i] = guildData;
         }
-        runtime.on('daily', (current) => {
+        runtime.on('daily', () => {
             for (let guild in this.guilds) {
                 let guildData = this.guilds[guild];
                 if (guildData.quizbowlChan) {
@@ -146,13 +155,13 @@ class GameManager {
             user.userManager.addXP(reward);
             user.userManager.addGems(gemReward);
             let card = (0, utilities_1.cardDraw)(false);
-            if (card) {
+            if (card && msg.member) {
                 user.getUserManager().addCard(card.id);
                 let loading = new discord_js_1.AttachmentBuilder(fs_1.default.readFileSync(data_1.GetFile.assets + "/images/loading88px.gif"), { name: "loading.gif" });
                 let rewardMsg = yield ((_b = msg.channel) === null || _b === void 0 ? void 0 : _b.send({ files: [loading] }));
                 let attachment = new discord_js_1.AttachmentBuilder(yield (0, utilities_1.openChestGif)(card.background, card.rank), { name: "chestopen.gif" });
                 let embed = new discord_js_1.EmbedBuilder()
-                    .setTitle('Reward')
+                    .setTitle(`${msg.member.user.username}'s Reward`)
                     .setDescription(`Lucky you! Received a "${card.title}" card!\n+${gemReward} gems, +${Math.round(reward / 10)} coins, +${reward} xp`)
                     .setImage(`attachment://chestopen.gif`);
                 yield (rewardMsg === null || rewardMsg === void 0 ? void 0 : rewardMsg.edit({ embeds: [embed], files: [attachment] }));

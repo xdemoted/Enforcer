@@ -1,7 +1,7 @@
 import { Client, CommandInteraction, TextChannel } from "discord.js";
 import { DataManager, GuildManager, GuildMemberManager, GuildMember as GMember } from "../../data";
 import { baseCommand, commandData } from "../../commands";
-import { ChannelInteractionCollector, Dialogue } from "../../utilities";
+import { Dialogue } from "../../utilities";
 export default class punish extends baseCommand {
     static command = {
         "name": "punish",
@@ -341,7 +341,6 @@ export default class punish extends baseCommand {
         this.serverManager = commandData.serverManager;
     }
     async execute(interaction: CommandInteraction) {
-        new ChannelInteractionCollector(interaction.channel as TextChannel, () => { return true })
         //console.log(interaction)
         let i = '1'
         let guildSettings = this.data.getGuild(interaction.guildId as string).settings

@@ -32,11 +32,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const canvas_1 = require("canvas");
+const canvas_1 = __importStar(require("canvas"));
 var quantize = require('quantize');
 const fs = __importStar(require("fs"));
 const utilities_1 = require("../modules/utilities");
 const data_1 = require("../modules/data");
+const crypto_1 = require("crypto");
+const gifencoder_1 = __importDefault(require("gifencoder"));
+canvas_1.default.registerFont('./build/assets/fonts/segmento.otf', { family: 'Segmento' });
 const url = 'https://music.youtube.com/watch?v=6ywXBNpc-To&list=LM';
 function createNamecard() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -413,7 +416,7 @@ function rollTest() {
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA
 function modColor(color, modifier) {
-    let newColor = color.map((value, index) => {
+    let newColor = color.map((value, _index) => {
         let newValue = value + modifier;
         if (newValue > 255)
             newValue = 255;
@@ -424,66 +427,295 @@ function modColor(color, modifier) {
     return newColor;
 }
 function colorEncoder(str) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const colorMap = { "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
-        const regex = /&\d/g;
-        const modifiedStr = str.replace(regex, '');
-        const parts = str.split(/(&\d)/);
-        if (parts[0].length == 0)
-            parts.splice(0, 1);
-        let length = 0;
-        let canvas = new canvas_1.Canvas(1, 1);
-        let ctx = canvas.getContext('2d');
-        ctx.font = '40px Segmento';
-        canvas = new canvas_1.Canvas(ctx.measureText(modifiedStr).width, 50);
-        ctx = canvas.getContext('2d');
-        ctx.font = '40px Segmento';
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (!part.startsWith('&')) {
-                let color;
-                if (parts[i - 1] && parts[i - 1].startsWith('&')) {
-                    color = colorMap[parts[i - 1]];
-                }
-                else
-                    color = [255, 255, 255];
-                part.split('').forEach((char, index) => {
-                    let symbolColor = color;
-                    if (/^[a-z0-9]+$/i.test(char)) {
-                        symbolColor = modColor(color, -50);
-                        ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
-                    }
-                    else if (/[+\-/*/^]/.test(char)) {
-                        symbolColor = modColor(color, -25);
-                        ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
-                    }
-                    else {
-                        ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
-                    }
-                    ctx.fillText(char, length, 35);
-                    length += ctx.measureText(char).width;
-                });
+    const colorMap = { "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
+    const regex = /&\d/g;
+    const modifiedStr = str.replace(regex, '');
+    const parts = str.split(/(&\d)/);
+    if (parts[0].length == 0)
+        parts.splice(0, 1);
+    let length = 0;
+    let canvas = new canvas_1.Canvas(1, 1);
+    let ctx = canvas.getContext('2d');
+    ctx.font = '40px Segmento';
+    canvas = new canvas_1.Canvas(ctx.measureText(modifiedStr).width, 50);
+    ctx = canvas.getContext('2d');
+    ctx.font = '40px Segmento';
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (!part.startsWith('&')) {
+            let color;
+            if (parts[i - 1] && parts[i - 1].startsWith('&')) {
+                color = colorMap[parts[i - 1]];
             }
+            else
+                color = [255, 255, 255];
+            part.split('').forEach((char, _index) => {
+                let symbolColor = color;
+                if (/^[a-z0-9]+$/i.test(char)) {
+                    symbolColor = modColor(color, -50);
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                }
+                else if (/[+\-/*/^]/.test(char)) {
+                    symbolColor = modColor(color, -25);
+                    ctx.fillStyle = `rgb(${symbolColor[0]},${symbolColor[1]},${symbolColor[2]})`;
+                }
+                else {
+                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                }
+                ctx.fillText(char, length, 35);
+                length += ctx.measureText(char).width;
+            });
         }
-        fs.writeFileSync(data_1.GetFile.assets + '/jim.png', canvas.toBuffer());
-    });
+    }
+    return canvas;
 }
 function createColorText(str) {
-    return __awaiter(this, void 0, void 0, function* () {
+    let left = [];
+    let right = [];
+    let pairs = [];
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] === '(') {
+            left.push(i);
+        }
+        else if (str[i] === ')') {
+            right.push(i);
+            let leftIndex = left.pop();
+            pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
+        }
+    }
+    let modifiedStr = str.split('').map((char, index) => {
+        if (char === '(') {
+            let pair = pairs.find(pair => pair[0] === index);
+            if (pair) {
+                return `\&${pair[2]}(`;
+            }
+        }
+        else if (char === ')') {
+            let pair = pairs.find(pair => pair[1] === index);
+            if (pair) {
+                return `)\&${pair[2] - 1 >= 0 ? pair[2] - 1 : 0}`;
+            }
+        }
+        return char;
+    }).join('');
+    return colorEncoder(modifiedStr);
+}
+function multilineText(position, text, ctx, maxWidth = 0, wordBreak = false) {
+    let str = '';
+    let array;
+    if (wordBreak)
+        array = text.split(' ');
+    else
+        array = text.split('');
+    let lines = 1;
+    console.log(ctx.measureText(text).width);
+    console.log(array);
+    for (let i = 0; i < array.length; i++) {
+        const length = ctx.measureText(str.replace(/\n/g, '') + array[i]).width;
+        if (maxWidth > 1 && length > maxWidth * lines) {
+            console.log('New line at:', i);
+            str += '\n' + array[i];
+            lines++;
+        }
+        else {
+            str += array[i];
+        }
+    }
+    let textLines = str.split('\n');
+    let lineHeight = ctx.measureText('M').width * 1.5;
+    textLines.forEach((line, index) => {
+        ctx.fillText(line, position[0], position[1] + lineHeight * index);
+    });
+}
+function measureMultilineText(text, font = 'Arial 20px', maxWidth = 0, wordBreak = false) {
+    const originalMaxWidth = maxWidth;
+    let charHeight = (0, utilities_1.measureText)('M', font).width * 1.5;
+    let lineCount = 1;
+    let str = '';
+    let lines = [];
+    let characters;
+    if (wordBreak)
+        characters = text.split(' ');
+    else
+        characters = text.split('');
+    if (maxWidth > 1) {
+        for (let i = 0; i < characters.length; i++) {
+            const length = (0, utilities_1.measureText)(str.replace(/\n/g, '') + characters[i], font).width;
+            if (length > maxWidth) {
+                lines.push(str);
+                lineCount++;
+                str = characters[i];
+            }
+            else {
+                if (str == ' ')
+                    str = '';
+                str += characters[i];
+            }
+        }
+        if (str.length > 0) {
+            lines.push(str);
+            lineCount++;
+        }
+    }
+    return { lineCount: lineCount, height: charHeight * lineCount, lines: lines };
+}
+//colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
+createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))');
+// (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
+// 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+function generateCalculator() {
+    const res = 115 / 66;
+    const lw = 4 * res;
+    let canvas = new canvas_1.Canvas(115, 150);
+    let ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = lw;
+    let ctxUtils = new utilities_1.ContextUtilities(ctx);
+    ctxUtils.roundedRect(0, 0, 66 * res, 86 * res, 5 * res, lw);
+    ctx.stroke();
+    ctxUtils.roundedRect(8 * res, 8 * res, 50 * res, 16 * res, 5 * res, lw);
+    ctx.stroke();
+    ctxUtils.roundedRect(8 * res, 28 * res, 14 * res, 14 * res, 3 * res, lw);
+    ctx.stroke();
+    ctxUtils.roundedRect(26 * res, 28 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(44 * res, 28 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(8 * res, 46 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(26 * res, 46 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(44 * res, 46 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(8 * res, 64 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(26 * res, 64 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    ctxUtils.roundedRect(44 * res, 64 * res, 14 * res, 14 * res, 3 * res, lw * 0.75);
+    ctx.stroke();
+    return canvas;
+}
+function circleGenerator() {
+    let canvas = new canvas_1.Canvas(250, 250);
+    let ctx = canvas.getContext('2d');
+    let ctxUtils = new utilities_1.ContextUtilities(ctx);
+    ctxUtils.roundedRect(0, 0, 250, 250, 125, 0);
+    let gradient = ctx.createRadialGradient(125, 125, 0, 125, 125, 125);
+    gradient.addColorStop(0, '#101010');
+    gradient.addColorStop(1, '#404040');
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.drawImage(generateCalculator(), 135 / 2, 50, 115, 150);
+    fs.writeFileSync('./circle.png', canvas.toBuffer());
+}
+function textHeight(font) {
+    let canvas = new canvas_1.Canvas(100, 100);
+    let ctx = canvas.getContext('2d');
+    ctx.font = font;
+    ctx.textBaseline = 'top';
+    ctx.fillText('Hello World', 0, 0);
+    const result = trim(canvas);
+    fs.writeFileSync('./test.png', canvas.toBuffer());
+    return result ? result.height : 100;
+}
+function trim(c) {
+    var ctx = c.getContext('2d'), 
+    // create a temporary canvas in which we will draw back the trimmed text
+    copy = new canvas_1.Canvas(0, 0).getContext('2d'), 
+    // Use the Canvas Image Data API, in order to get all the
+    // underlying pixels data of that canvas. This will basically
+    // return an array (Uint8ClampedArray) containing the data in the
+    // RGBA order. Every 4 items represent one pixel.
+    pixels = ctx.getImageData(0, 0, c.width, c.height), 
+    // total pixels
+    l = pixels.data.length, 
+    // main loop counter and pixels coordinates
+    i, x, y, 
+    // an object that will store the area that isn't transparent
+    bound = { top: null, left: null, right: null, bottom: null };
+    // for every pixel in there
+    for (i = 0; i < l; i += 4) {
+        // if the alpha value isn't ZERO (transparent pixel)
+        if (pixels.data[i + 3] !== 0) {
+            // find it's coordinates
+            x = (i / 4) % c.width;
+            y = ~~((i / 4) / c.width);
+            // store/update those coordinates
+            // inside our bounding box Object
+            if (bound.top === null) {
+                bound.top = y;
+            }
+            if (bound.left === null) {
+                bound.left = x;
+            }
+            else if (x < bound.left) {
+                bound.left = x;
+            }
+            if (bound.right === null) {
+                bound.right = x;
+            }
+            else if (bound.right < x) {
+                bound.right = x;
+            }
+            if (bound.bottom === null) {
+                bound.bottom = y;
+            }
+            else if (bound.bottom < y) {
+                bound.bottom = y;
+            }
+        }
+    }
+    if (bound.top === null || bound.left === null || bound.right === null || bound.bottom === null)
+        return;
+    // actual height and width of the text
+    // (the zone that is actually filled with pixels)
+    var trimHeight = bound.bottom - bound.top, trimWidth = bound.right - bound.left, 
+    // get the zone (trimWidth x trimHeight) as an ImageData
+    // (Uint8ClampedArray of pixels) from our canvas
+    trimmed = ctx.getImageData(bound.left, bound.top, trimWidth, trimHeight);
+    // Draw back the ImageData into the canvas
+    copy.canvas.width = trimWidth;
+    copy.canvas.height = trimHeight;
+    copy.putImageData(trimmed, 0, 0);
+    // return the canvas element
+    return copy.canvas;
+}
+class textFormatter {
+    constructor(text, font) {
+        this.colorMap = { "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] };
+        this.text = text;
+        this.font = font;
+    }
+    measureFontHeight() {
+        let canvas = new canvas_1.Canvas(100, 100);
+        let ctx = canvas.getContext('2d');
+        ctx.font = this.font;
+        ctx.textBaseline = 'top';
+        ctx.fillText('Hello World', 0, 0);
+        const result = trim(canvas);
+        return result ? result.height : 100;
+    }
+    measureTextWidth(text = this.text) {
+        let canvas = new canvas_1.Canvas(100, 100);
+        let ctx = canvas.getContext('2d');
+        ctx.font = this.font;
+        return ctx.measureText(text).width;
+    }
+    paranthesesColor() {
         let left = [];
         let right = [];
         let pairs = [];
-        for (let i = 0; i < str.length; i++) {
-            if (str[i] === '(') {
+        for (let i = 0; i < this.text.length; i++) {
+            if (this.text[i] === '(') {
                 left.push(i);
             }
-            else if (str[i] === ')') {
+            else if (this.text[i] === ')') {
                 right.push(i);
                 let leftIndex = left.pop();
                 pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
             }
         }
-        let modifiedStr = str.split('').map((char, index) => {
+        let modifiedStr = this.text.split('').map((char, index) => {
             if (char === '(') {
                 let pair = pairs.find(pair => pair[0] === index);
                 if (pair) {
@@ -498,9 +730,151 @@ function createColorText(str) {
             }
             return char;
         }).join('');
-        colorEncoder(modifiedStr);
+        this.text = modifiedStr;
+        return this;
+    }
+    toMultiline(maxWidth = 0, wordBreak = false) {
+        let colorsplit = this.text.split(/(&\d)/);
+        let characters = [];
+        let finalArray = [];
+        colorsplit.forEach((colorText) => {
+            if (wordBreak)
+                characters = colorText.split(' ');
+            else
+                characters = colorText.split('');
+            characters.forEach((char, index) => {
+                if (characters[index - 1] === "&" && char.match(/\d/)) {
+                    finalArray[finalArray.length - 1] += char;
+                }
+                else
+                    finalArray.push(char);
+            });
+        });
+        let charHeight = this.measureFontHeight();
+        let str = '';
+        let lines = [];
+        console.log(finalArray);
+        if (maxWidth > 1) {
+            for (let i = 0; i < finalArray.length; i++) {
+                const length = (0, utilities_1.measureText)(str.replace(/&\d/g, '').replace(/\n/g, '') + finalArray[i], this.font).width;
+                if (length > maxWidth) {
+                    lines.push(str);
+                    str = finalArray[i];
+                }
+                else {
+                    if (str == ' ')
+                        str = '';
+                    str += finalArray[i];
+                }
+            }
+            if (str.length > 0) {
+                lines.push(str);
+            }
+        }
+        return { lineCount: lines.length, height: charHeight * lines.length, lines: lines };
+    }
+    parseColor(text) {
+        const [textWidth, textHeight] = [this.measureTextWidth(), this.measureFontHeight()];
+        let canvas = new canvas_1.Canvas(textWidth, textHeight);
+        let ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = this.font;
+        let textSplit = text.split(/(&\d)/g);
+        console.log(textSplit);
+        let color;
+        let position = 0;
+        for (const string in textSplit) {
+            if (textSplit[string].match(/&\d/)) {
+                console.log(color, textSplit[string]);
+                color = this.colorMap[textSplit[string]];
+                ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                continue;
+            }
+            ;
+            ctx.fillText(textSplit[string], position, 0);
+            position += ctx.measureText(textSplit[string]).width;
+        }
+        return canvas;
+    }
+    parseLines(lines) {
+        let maxWidth = 0;
+        lines.forEach((line, _index) => {
+            let width = this.measureTextWidth(line);
+            if (width > maxWidth)
+                maxWidth = width;
+        });
+        const textHeight = this.measureFontHeight();
+        console.log(maxWidth, textHeight * lines.length, lines.length, textHeight + 0.1 * textHeight);
+        let canvas = new canvas_1.Canvas(maxWidth, textHeight * lines.length * 1.1);
+        let ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'top';
+        ctx.font = this.font;
+        lines.forEach((line, index) => {
+            let textSplit = line.split(/(&\d)/g);
+            let color;
+            let position = 0;
+            for (const string in textSplit) {
+                if (textSplit[string].match(/&\d/)) {
+                    color = this.colorMap[textSplit[string]];
+                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                    continue;
+                }
+                ;
+                ctx.fillText(textSplit[string], position, textHeight * index * 1.1);
+                position += ctx.measureText(textSplit[string]).width;
+            }
+        });
+        return canvas;
+    }
+}
+function createGameCard(title, description, icon) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let textFormat = new textFormatter(description, '30px Segmento');
+        let descHeight = textFormat.measureFontHeight();
+        let textMeasure = textFormat.paranthesesColor().toMultiline(460, true);
+        let canvas = new canvas_1.Canvas(500, 120 + textMeasure.lineCount * descHeight * 1.1);
+        let ctx = canvas.getContext('2d');
+        let utils = new utilities_1.ContextUtilities(ctx);
+        // Frame
+        let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#707070');
+        gradient.addColorStop(1, '#404040');
+        ctx.strokeStyle = gradient;
+        let darkgradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        darkgradient.addColorStop(0, '#404040');
+        darkgradient.addColorStop(1, '#101010');
+        ctx.fillStyle = darkgradient;
+        utils.roundedRect(0, 0, 500, canvas.height, 50, 10);
+        ctx.stroke();
+        ctx.fill();
+        utils.roundedRect(0, 0, 100, 100, 50, 5);
+        ctx.stroke();
+        utils.roundedRect(0, 0, 500, 100, 50, 5);
+        ctx.stroke();
+        // Ideal Title Font
+        let size = 10;
+        while (ctx.measureText(title).width < 360 && size < 50) {
+            size++;
+            ctx.font = `${size}px Segmento`;
+        }
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = 'white';
+        ctx.fillText(title, 105, (100 - textHeight(ctx.font)) / 2);
+        // Description
+        ctx.font = '30px Segmento';
+        ctx.drawImage(textFormat.parseLines(textMeasure.lines), 20, 110);
+        if (typeof icon == 'string') {
+            try {
+                ctx.drawImage(yield (0, canvas_1.loadImage)(icon), 5, 5, 90, 90);
+            }
+            catch (error) {
+                console.log('error');
+            }
+        }
+        fs.writeFileSync('./gamecard.png', canvas.toBuffer());
     });
 }
+<<<<<<< HEAD
 function createBackgroundGradient(accentColor, accentColor2) {
     var _a;
     let canvas = new canvas_1.Canvas(1200, 300);
@@ -522,3 +896,6 @@ fs.writeFileSync(data_1.GetFile.assets + '/images/namecards/backgrounds/test.png
 //createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+=======
+createGameCard('Solve the Problem', '((72 / (9 ^ 0.5)) - ((19 + 17) / 2)) + (12 + (36 / (-13 + 15)))', data_1.GetFile.assets + '/icons/math.png');
+>>>>>>> 494c127fc07c864a2a9b4dc011809df8a43ce74b
