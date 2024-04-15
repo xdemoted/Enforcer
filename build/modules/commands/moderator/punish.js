@@ -22,7 +22,6 @@ class punish extends commands_1.baseCommand {
     }
     execute(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
-            new utilities_1.ChannelInteractionCollector(interaction.channel, () => { return true; });
             //console.log(interaction)
             let i = '1';
             let guildSettings = this.data.getGuild(interaction.guildId).settings;
