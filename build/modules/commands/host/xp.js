@@ -22,8 +22,8 @@ class xp extends commands_1.baseCommand {
         this.serverManager = commandData.serverManager;
     }
     execute(interaction) {
-        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
             let amount = (_a = interaction.options.get('amount')) === null || _a === void 0 ? void 0 : _a.value;
             let type = (_b = interaction.options.get('type')) === null || _b === void 0 ? void 0 : _b.value;
             let user = (_c = interaction.options.get('user')) === null || _c === void 0 ? void 0 : _c.user;

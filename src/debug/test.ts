@@ -283,7 +283,7 @@ async function cardBackground(url: string = GetFile.assets + '/images/tradecards
     fs.writeFileSync('../newCard.png', canvas.toBuffer());
     return canvas;
 }
-async function addFrame(source: string | Canvas, rank: number, scale = 1) {
+async function addFrame(source: string | Canvas, rank: number | string, scale = 1) {
     let canvas = new Canvas(1000 * scale, 1400 * scale)
     let ctx = canvas.getContext('2d');
     let sourceImage
@@ -302,7 +302,7 @@ async function addFrame(source: string | Canvas, rank: number, scale = 1) {
     ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale)
     return canvas;
 }
-async function createCard(source: string, rank: number, translation: [number, number] = [0, 0], scale: number = 1, mode: 'h' | 'w' = 'h', mark?: boolean) {
+async function createCard(source: string, rank: number | string, translation: [number, number] = [0, 0], scale: number = 1, mode: 'h' | 'w' = 'h', mark?: boolean) {
     let canvas = await autoScaleCardBackground(source, translation, scale, mode, mark)
     fs.writeFileSync('./noframe.png', canvas.toBuffer());
     let frame = await addFrame(canvas, rank, scale);
@@ -322,59 +322,6 @@ async function listCards() {
     fs.writeFileSync('../cards.png', canvas.toBuffer());
     return canvas
 }
-let scale = 1
-let settings = { paddingX: 20, paddingY: 20 }
-async function createCatalog(id: number) {
-    let data: TradecardManifest = require(GetFile.assets + '/images/tradecards/manifest.json')
-    let cards = data.cards
-    let catalog = data.collections.find(c => c.id == id)
-    if (catalog && catalog.background) {
-        let catalogCards = []
-        let cardvas = new Canvas(1250 + settings.paddingX * 4, Math.ceil(cards.length / 5) * (350 + settings.paddingY))
-        let cardctx = cardvas.getContext('2d')
-        for (let i = 0; i < catalog.cards.length; i++) {
-            const card = cards.find(c => c.id == (catalog as { cards: number[] }).cards[i])
-            if (card) catalogCards.push(card)
-        }
-        catalogCards.sort((b, a) => a.rank - b.rank)
-        for (let i = 0; i < catalogCards.length; i++) {
-            const card = catalogCards[i]
-            if (card) {
-                let image = await addFrame(GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25)
-                cardctx.drawImage(image, (i % 5) * (250 + settings.paddingX), Math.floor(i / 5) * (350 + settings.paddingY), 250, 350)
-            }
-        }
-        let catalogcanvas = new Canvas(1530, 2180)
-        let catalogctx = catalogcanvas.getContext('2d')
-        let background = await loadImage(GetFile.assets + `/images/tradecards/catalogs/${catalog.background}`)
-        catalogctx.drawImage(background, 0, 0, 1530, 2180)
-        catalogctx.drawImage(cardvas, 40, 560, 1450, 2000)
-        cardctx.drawImage(background, 0, 0,)
-        fs.writeFileSync('./catalog.png', catalogcanvas.toBuffer())
-    }
-}
-function cardDraw(guarantee: boolean) {
-    let cards = GetFile.tradecardManifest().cards
-    let weightTotal = 0;
-    for (let i = 0; i < cards.length; i++) {
-        weightTotal += cards[i].rank == 1 ? 50 : cards[i].rank == 2 ? 25 : 2;
-    }
-    if (guarantee || randomInt(0, 100) < 10) {
-        let card;
-        while (card == undefined) {
-            let roll = randomInt(0, weightTotal)
-            let weight = 0;
-            for (let i = 0; i < cards.length; i++) {
-                weight += cards[i].rank == 1 ? 50 : cards[i].rank == 2 ? 25 : 2;
-                if (roll < weight) {
-                    card = cards[i]
-                    break;
-                }
-            }
-        }
-        return card
-    } else return undefined
-}
 function multiDraw(amount: number, guarantee: boolean = false) {
     let results = []
     for (let i = 0; i < amount; i++) {
@@ -388,7 +335,7 @@ function rollTest() {
     let ones = 0
     let twos = 0
     let threes = 0
-    console.log(rolls.sort((a, b) => { return a ? a.rank : 0 - (b ? b.rank : 0) }))
+    console.log(rolls.sort((a, b) => { return (a&&typeof a.rank == 'number'?a.rank:10) - (b&&typeof b.rank == 'number'?b.rank:10) }))
     for (let i = 0; i < rolls.length; i++) {
         const roll = rolls[i];
         if (roll?.rank == 0) fails++
@@ -405,47 +352,6 @@ function rollTest() {
     console.log('Two Star (Isolated):', Math.round(twos / total * 10000) / 100, '%')
     console.log('One Star (Isolated):', Math.round(ones / total * 10000) / 100, '%')
 }
-async function openChestGif() {
-    const start = Date.now()
-    let encoder = new GifEncoder(250, 350)
-    encoder.setDelay(50)
-    encoder.setRepeat(-1)
-    encoder.start()
-    let frames = fs.readdirSync(GetFile.assets + '/images/tradecards/chestgif')
-    console.log(frames)
-    for (let i = 0; i < 25; i++) {
-        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/1.gif')
-        let canvas = new Canvas(250, 350)
-        let ctx = canvas.getContext('2d')
-        ctx.fillStyle = '#313338'
-        ctx.fillRect(0, 0, 250, 350)
-        ctx.drawImage(image, Math.round(randomInt(i + 1) - (i + 1) / 2), Math.round(randomInt(i + 1) - (i + 1) / 2), 250, 350)
-        //@ts-ignore
-        encoder.addFrame(ctx)
-    }
-    for (let i = 0; i < frames.length; i++) {
-        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/' + frames[i])
-        let image2 = await addFrame(GetFile.assets + '/images/tradecards/backgrounds/wendigo.png', 3)
-        let canvas = new Canvas(250, 350)
-        let ctx = canvas.getContext('2d')
-        ctx.fillStyle = '#313338'
-        ctx.fillRect(0, 0, 250, 350)
-        ctx.drawImage(image, 0, 30 * i, 250, 350)
-        ctx.beginPath()
-        ctx.moveTo(0, 197 + 30 * i)
-        ctx.lineTo(250, 197 + 30 * i)
-        ctx.lineTo(250, 0)
-        ctx.lineTo(0, 0)
-        ctx.clip()
-        if (i != 0) ctx.drawImage(image2, 55 - (55 / 7) * (i + 1), 197 - (197 / 7) * (i + 1), 144 + ((250 - 144) / 7) * (i + 1), 202 + ((350 - 202) / 7) * (i + 1))
-        //@ts-ignore
-        encoder.addFrame(ctx)
-        //if (i == 0) encoder.setDelay(50)
-        console.log(Date.now() - start)
-    }
-    encoder.finish()
-    fs.writeFileSync('./test.gif', encoder.out.getData())
-}
 //openChestGif()
 //createCatalog(0)
 //fs.readdir('./assets/images/tradecards/backgrounds', (err, files) => {console.log(files)})
@@ -453,8 +359,8 @@ async function openChestGif() {
 //createCard('https://images.wallpapersden.com/image/download/godzilla_bGtqamqUmZqaraWkpJRmbmdlrWZnZWU.jpg', 3, [50, (1400 * scale - 1400) / 2], scale, 'h', false)
 //createCard('../redacted.png', 3, [0, (1400 * scale - 1400) / 2], scale, 'h', false)
 // DOVER https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7a4d4f7e-ea30-4b24-a0ba-485be1c26475/d4jvv00-7dbcd70b-140f-4aad-a4d1-8fe381f0b012.jpg/v1/fill/w_900,h_1135,q_75,strp/dover_demon_by_chr_ali3_d4jvv00-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTEzNSIsInBhdGgiOiJcL2ZcLzdhNGQ0ZjdlLWVhMzAtNGIyNC1hMGJhLTQ4NWJlMWMyNjQ3NVwvZDRqdnYwMC03ZGJjZDcwYi0xNDBmLTRhYWQtYTRkMS04ZmUzODFmMGIwMTIuanBnIiwid2lkdGgiOiI8PTkwMCJ9XV0sImF1ZCI6WyJ1cm46c2VydmljZTppbWFnZS5vcGVyYXRpb25zIl19.pjzpBDKbg_6pchvx6axCPlS3Z8N8z3ifpwKYU6W0DPA
-function modColor(color: [number, number, number], modifier: number) {
-    let newColor = color.map((value, _index) => {
+function modColor(color:[number,number,number],modifier: number) {
+    let newColor = color.map((value, index) => {
         let newValue = value + modifier
         if (newValue > 255) newValue = 255
         if (newValue < 0) newValue = 0
@@ -462,8 +368,8 @@ function modColor(color: [number, number, number], modifier: number) {
     })
     return newColor as [number, number, number]
 }
-function colorEncoder(str: string) {
-    const colorMap: Record<string, [number, number, number]> = { "&0": [230, 230, 0], "&1": [200, 20, 175], '&2': [52, 152, 219], "&3": [230, 230, 0], "&4": [200, 20, 175], '&5': [52, 152, 219], "&6": [230, 230, 0], "&7": [200, 20, 175], '&8': [52, 152, 219] }
+async function colorEncoder(str: string) {
+    const colorMap: Record<string, [number,number,number]> = {"&0": [230,230,0], "&1": [200,20,175], '&2': [52,152,219], "&3": [230,230,0], "&4": [200,20,175], '&5': [52,152,219], "&6": [230,230,0], "&7": [200,20,175], '&8': [52,152,219]}
     const regex = /&\d/g;
     const modifiedStr = str.replace(regex, '');
     const parts = str.split(/(&\d)/)
@@ -582,7 +488,7 @@ function measureMultilineText(text: string, font = 'Arial 20px', maxWidth = 0, w
     return { lineCount: lineCount, height: charHeight * lineCount, lines: lines }
 }
 //colorEncoder('Test&2Test&3Test&4Test&5Test&6Test')
-//createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
+createColorText('44+((((4 * 43) / (-25 + 27)) / (44 - (17 + 25))) + ((68 / 2) - (6 * 5))) + ((((6 / 3) * 23) / ((16 ^ 0.5) / (-18 + 20))) / (1 ^ 2))')
 // (  (  8  +  5  )  -  (  5  -  6  )  )  +  (  (  5  1  +  2  0  )  -  (  2  2  -  1  0  )  )
 // 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
 function generateCalculator() {

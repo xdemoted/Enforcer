@@ -21,8 +21,8 @@ class setup extends commands_1.baseCommand {
         this.serverManager = commandData.serverManager;
     }
     execute(interaction) {
-        var _a, _b, _c, _d;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c, _d;
             let data = this.data;
             if (!(interaction.channel instanceof discord_js_1.StageChannel)) {
                 function convertToCompliant(string) {

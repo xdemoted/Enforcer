@@ -153,6 +153,13 @@
             "rank": 2,
             "description": "A giant, prehistoric sea monster that is often depicted as a destructive force of nature. Godzilla has appeared in numerous films and is a popular icon of Japanese pop culture.",
             "background": "godzilla.png"
+        },
+        {
+            "id": 23,
+            "title": "Destroyer's Special Shotgun",
+            "rank": "e",
+            "description": "A powerful shotgun wielded by the legendary demon hunter, Destroyer. It is said to be capable of destroying even the most powerful demons with a single shot. This shotgun is unobtainable, part of an easter giveaway.",
+            "background": "shotgun.png"
         }
     ],
     "collections": [

@@ -506,7 +506,7 @@ export function cardDraw(guarantee: boolean) {
     }
     return card
 }
-export async function addFrame(source: string | Canvas, rank: number, scale = 1) {
+export async function addFrame(source: string | Canvas, rank: number | string, scale = 1) {
     let canvas = new Canvas(1000 * scale, 1400 * scale)
     let ctx = canvas.getContext('2d');
     let sourceImage
@@ -519,8 +519,11 @@ export async function addFrame(source: string | Canvas, rank: number, scale = 1)
         }
     }
     let frame
-    if (rank == 1 || rank == 2 || rank == 3) frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
-    else frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
+    try {
+        frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
+    } catch {
+       frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
+    }
     ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale)
     ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale)
     return canvas;
@@ -535,7 +538,7 @@ export async function createCatalog(cards: number[], background?: string) {
         const card = allCards.find(c => c.id == cards[i])
         if (card) catalogCards.push(card)
     }
-    catalogCards.sort((b, a) => a.rank - b.rank)
+    catalogCards.sort((b, a) => (typeof a.rank == 'number' ? a.rank : 10) - (typeof b.rank == 'number' ? b.rank : 10))
     for (let i = 0; i < catalogCards.length; i++) {
         const card = catalogCards[i]
         if (card) {
@@ -554,7 +557,7 @@ export async function createCatalog(cards: number[], background?: string) {
     }
     return cardvas
 }
-export async function openChestGif(background: string, rank: number) {
+export async function openChestGif(background: string, rank: number | string) {
     let encoder = new GIFEncoder(250, 350)
     encoder.setDelay(50)
     encoder.setRepeat(-1)
@@ -601,7 +604,19 @@ export async function getLeaderCard(users: (GuildMember | User)[], resolution = 
     }
     return canvas
 }
-
+export function getWord(length:number) {
+    const words = GetFile.wordList()
+    const filteredWords = words.filter(word => word.length === length);
+    let randomWord
+    if (filteredWords.length > 0) {
+    const randomIndex = Math.floor(Math.random() * filteredWords.length);
+    randomWord = filteredWords[randomIndex];
+    } else {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        randomWord = words[randomIndex]
+    }
+    return randomWord;
+}
 export async function getNamecard(gUser: GuildMember | User, data: DataManager, rank?: number, resolution = 1) {
     let user: BaseUserManager;
     let gUser2: GlobalUser;
@@ -651,8 +666,8 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
     return canvas;
 }
-function modColor(color: [number, number, number], modifier: number) {
-    let newColor = color.map((value) => {
+function modColor(color:[number,number,number],modifier: number) {
+    let newColor = color.map((value, index) => {
         let newValue = value + modifier
         if (newValue > 255) newValue = 255
         if (newValue < 0) newValue = 0

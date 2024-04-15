@@ -263,8 +263,8 @@ function createBackgroundImage(url, resolution = 1) {
         return canvas;
     });
 }
-function createTemplate(url, resolution = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function createTemplate(url_1) {
+    return __awaiter(this, arguments, void 0, function* (url, resolution = 1) {
         let canvas = new canvas_1.Canvas(1200 * resolution, 300 * resolution);
         let ctx = canvas.getContext('2d');
         let palette = yield getPalette(url);
@@ -293,8 +293,13 @@ function createTemplate(url, resolution = 1) {
         return canvas;
     });
 }
-function createNameCard(resolution = 1) {
+function createNameCard(url, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
+        //try {
+        //    await loadImage(url)
+        //} catch (error) {
+        //    url = "https://cdn.discordapp.com/attachments/1195048388643791000/1208650338102415430/image.png?ex=65e40e58&is=65d19958&hm=87ce94a295a056a7265ecef1f412b2a8f6ca1a2851b32c96506a69c1433a6146&"
+        //}
         const dataPath = path_1.default.join(__dirname, '../assets/images/namecards/namecard.png');
         let canvas = new canvas_1.Canvas(1200, 300);
         let ctx = canvas.getContext('2d');
@@ -544,8 +549,8 @@ function cardDraw(guarantee) {
     return card;
 }
 exports.cardDraw = cardDraw;
-function addFrame(source, rank, scale = 1) {
-    return __awaiter(this, void 0, void 0, function* () {
+function addFrame(source_1, rank_1) {
+    return __awaiter(this, arguments, void 0, function* (source, rank, scale = 1) {
         let canvas = new canvas_1.Canvas(1000 * scale, 1400 * scale);
         let ctx = canvas.getContext('2d');
         let sourceImage;
@@ -560,10 +565,12 @@ function addFrame(source, rank, scale = 1) {
             }
         }
         let frame;
-        if (rank == 1 || rank == 2 || rank == 3)
+        try {
             frame = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
-        else
+        }
+        catch (_a) {
             frame = yield (0, canvas_1.loadImage)(data_1.GetFile.assets + '/images/tradecards/frames/default.png');
+        }
         ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale);
         ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale);
         return canvas;
@@ -582,7 +589,7 @@ function createCatalog(cards, background) {
             if (card)
                 catalogCards.push(card);
         }
-        catalogCards.sort((b, a) => a.rank - b.rank);
+        catalogCards.sort((b, a) => (typeof a.rank == 'number' ? a.rank : 10) - (typeof b.rank == 'number' ? b.rank : 10));
         for (let i = 0; i < catalogCards.length; i++) {
             const card = catalogCards[i];
             if (card) {
@@ -646,8 +653,8 @@ function openChestGif(background, rank) {
     });
 }
 exports.openChestGif = openChestGif;
-function getLeaderCard(users, resolution = 1, data) {
-    return __awaiter(this, void 0, void 0, function* () {
+function getLeaderCard(users_1) {
+    return __awaiter(this, arguments, void 0, function* (users, resolution = 1, data) {
         let canvas = new canvas_1.Canvas(2450 * resolution, 1925 * resolution);
         let context = canvas.getContext('2d');
         for (let i = 0; i < users.length; i++) {
@@ -657,6 +664,21 @@ function getLeaderCard(users, resolution = 1, data) {
     });
 }
 exports.getLeaderCard = getLeaderCard;
+function getWord(length) {
+    const words = data_1.GetFile.wordList();
+    const filteredWords = words.filter(word => word.length === length);
+    let randomWord;
+    if (filteredWords.length > 0) {
+        const randomIndex = Math.floor(Math.random() * filteredWords.length);
+        randomWord = filteredWords[randomIndex];
+    }
+    else {
+        const randomIndex = Math.floor(Math.random() * words.length);
+        randomWord = words[randomIndex];
+    }
+    return randomWord;
+}
+exports.getWord = getWord;
 function getNamecard(gUser, data, rank, resolution = 1) {
     return __awaiter(this, void 0, void 0, function* () {
         let user;

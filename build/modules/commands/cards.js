@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const data_1 = require("../data");
 const commands_1 = require("../commands");
 const utilities_1 = require("../utilities");
 class cards extends commands_1.baseCommand {
@@ -25,7 +24,13 @@ class cards extends commands_1.baseCommand {
     execute(interaction) {
         return __awaiter(this, void 0, void 0, function* () {
             yield interaction.deferReply();
-            let user = new data_1.UserManager(this.memberManager.getGlobalUser());
+            let discordUser;
+            let userOption = interaction.options.getUser('user');
+            if (userOption)
+                discordUser = userOption;
+            else
+                discordUser = interaction.user;
+            let user = this.serverManager.getMemberManager(discordUser.id).getUserManager();
             let cards = user.getCards().sort((a, b) => a - b);
             if (cards.length < 1) {
                 interaction.editReply({ content: 'You have no cards to display.' });
@@ -35,7 +40,7 @@ class cards extends commands_1.baseCommand {
             let attachment = new discord_js_1.AttachmentBuilder((yield cardvas).toBuffer(), { name: 'cards.png' });
             let embed = new discord_js_1.EmbedBuilder()
                 .setColor('LuminousVividPink')
-                .setTitle(`${interaction.user.displayName}'s Cards`)
+                .setTitle(`${discordUser.displayName}'s Cards`)
                 .setImage('attachment://cards.png');
             yield interaction.editReply({ embeds: [embed], files: [attachment] });
             setTimeout(() => {
@@ -47,6 +52,13 @@ class cards extends commands_1.baseCommand {
 }
 cards.command = {
     "name": "cards",
-    "description": "Run this command daily for rewards."
+    "description": "Run this command daily for rewards.",
+    "options": [
+        {
+            "type": 6,
+            "name": "user",
+            "description": "Specify which user"
+        }
+    ]
 };
 exports.default = cards;
