@@ -9,6 +9,7 @@ export class GetFile {
     static namecardPath = this.assets + '/images/namecards/manifest.json'
     static tradecardPath = this.assets + "/images/tradecards/manifest.json"
     static serverPath = this.assets + "/stored/data.json"
+    static settingPath = this.assets + "/stored/settings.json"
     static commandPath = path.join(__dirname, './commands')
     static gamePath = path.join(__dirname, './games')
     static namecardManifest = (): namecardManifest => {
@@ -166,6 +167,7 @@ export class GuildSettings {
     gameToggle: boolean
     gameDelay: number
     leaderboard: string | false
+    countChannel: string | false
     constructor() {
         this.mainChannel = false
         this.qbChannel = false
@@ -175,6 +177,7 @@ export class GuildSettings {
         this.gameThread = false
         this.gameToggle = false
         this.leaderboard = false
+        this.countChannel = false
         this.gameDelay = 0
     }
 }
@@ -183,11 +186,13 @@ export class Guild {
     xp: number
     members: GuildMember[]
     settings: GuildSettings
+    count: number
     constructor(id: string) {
         this.id = id
         this.members = []
         this.xp = 0
         this.settings = new GuildSettings()
+        this.count = 0
     }
 }
 export class GuildManager {
