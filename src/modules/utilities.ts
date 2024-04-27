@@ -5,14 +5,56 @@ import { RgbPixel } from "quantize";
 import EventEmitter from 'events';
 import fs from 'fs'
 import { randomInt } from "crypto"
-import { BaseUserManager, DataManager, GetFile, GlobalUser, GuildMemberManager, TradecardManifest, UserManager } from "./data";
+import { BaseUserManager, DataManager, GetFile, GlobalUser, GuildMemberManager, TradecardManifest, UserManager, card } from "./data";
 import GIFEncoder from "gifencoder";
+import { isLineBreak } from "typescript";
 var quantize = require('quantize');
 
 // Stored Objects
 
 const startChance = 0.01
 const valueMap = { "+": 10, "-": 20, "*": 30, "/": 40 }
+function trim(c: Canvas) {
+
+    var ctx = c.getContext('2d'),
+        copy = new Canvas(0, 0).getContext('2d'),
+        pixels = ctx.getImageData(0, 0, c.width, c.height),
+        l = pixels.data.length,
+        i, x, y,
+        bound: { top: number | null, left: null | number, right: null | number, bottom: null | number } = { top: null, left: null, right: null, bottom: null };
+    for (i = 0; i < l; i += 4) {
+        if (pixels.data[i + 3] !== 0) {
+            x = (i / 4) % c.width;
+            y = ~~((i / 4) / c.width);
+            if (bound.top === null) {
+                bound.top = y;
+            }
+            if (bound.left === null) {
+                bound.left = x;
+            } else if (x < bound.left) {
+                bound.left = x;
+            }
+            if (bound.right === null) {
+                bound.right = x;
+            } else if (bound.right < x) {
+                bound.right = x;
+            }
+            if (bound.bottom === null) {
+                bound.bottom = y;
+            } else if (bound.bottom < y) {
+                bound.bottom = y;
+            }
+        }
+    }
+    if (bound.top === null || bound.left === null || bound.right === null || bound.bottom === null) return;
+    var trimHeight = bound.bottom - bound.top,
+        trimWidth = bound.right - bound.left,
+        trimmed = ctx.getImageData(bound.left, bound.top, trimWidth, trimHeight);
+    copy.canvas.width = trimWidth;
+    copy.canvas.height = trimHeight;
+    copy.putImageData(trimmed, 0, 0);
+    return copy.canvas;
+}
 export let maps = {
     easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 1).set('termLimit', 1),
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
@@ -156,7 +198,7 @@ export function isEven(num: number) {
     return num % 2 == 0
 }
 export function defaulter<T>(obj: T | undefined, def: T, filter: () => boolean = () => true) {
-    return obj&&filter() ? obj : def
+    return obj && filter() ? obj : def
 }
 function toRad(degrees: number): number {
     return (degrees * Math.PI) / 180
@@ -203,7 +245,34 @@ function formatter(number: number) {
     string += number;
     return string;
 }
-
+export async function createImageCanvas(url: string, constraints?: [number, number], rounding: number = 0) {
+    let image = await loadImage(url)
+    let x, y = 0
+    if (!constraints) {
+        x = image.width
+        y = image.height
+    } else {
+        if (constraints[0] && !constraints[1]) {
+            x = constraints[0]
+            y = constraints[0] / image.width * image.height
+        } else if (constraints[1] && !constraints[0]) {
+            y = constraints[1]
+            x = constraints[1] / image.height * image.width
+        } else {
+            x = constraints[0]
+            y = constraints[1]
+        }
+    }
+    let canvas = new Canvas(x, y)
+    let ctx = canvas.getContext('2d')
+    let ctxUtils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
+    if (rounding > 0) {
+        ctxUtils.roundedRect(0, 0, x, y, rounding, 0)
+        ctx.clip()
+    }
+    ctx.drawImage(image, 0, 0, x, y)
+    return canvas;
+}
 async function createBackgroundImage(url: string, resolution = 1) {
     let canvas = new Canvas(1200 * resolution, 300 * resolution);
     let ctx = canvas.getContext('2d');
@@ -221,7 +290,6 @@ async function createBackgroundImage(url: string, resolution = 1) {
     ctx.globalCompositeOperation = 'source-in'
     let image = await loadImage(url);
     let height = Math.round((image.height / image.width) * (1200 * resolution))
-    console.log(height)
     ctx.drawImage(await loadImage(url), 0, -(height - (300 * resolution)) / 2, 1200 * resolution, height)
     return canvas;
 }
@@ -230,8 +298,8 @@ async function createTemplate(url: string, resolution = 1) {
     let ctx = canvas.getContext('2d');
     let palette = await getPalette(url);
     let gradient = ctx.createLinearGradient(0, 0, 1200 * resolution, 0);
-    gradient.addColorStop(0, palette[0]);
-    gradient.addColorStop(1, palette[1]);
+    gradient.addColorStop(0, palette[0].string);
+    gradient.addColorStop(1, palette[1].string);
     ctx.strokeStyle = gradient;
     ctx.lineWidth = 20 * resolution;
     let offset = ctx.lineWidth / 2;
@@ -265,9 +333,72 @@ export async function createNameCard(url: string, accentColor?: string, resoluti
     ctx.drawImage(await createTemplate(url, resolution), 0, 0, 1200, 300)
     return canvas;
 }
-async function getPalette(url: string) {
+async function getBackground(h:number,color:[number,number,number]) {
+    let canvas = new Canvas(1000,h)
+    let ctx = canvas.getContext('2d')
+    let utils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
+    let radial = ctx.createRadialGradient(50, 50, 0, 50, 50, 50);
+    radial.addColorStop(0, `rgb(${color.map((c) => Math.round(c * 0.75)).join(',')})`);
+    radial.addColorStop(1, `rgb(${color.map((c) => Math.round(c * 0.5)).join(',')})`);
+    let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, `rgb(${color.join(',')})`);
+    gradient.addColorStop(1, `rgb(${color.map((c) => Math.round(c * 0.75)).join(',')})`);
+    ctx.strokeStyle = gradient;
+    let darkgradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    darkgradient.addColorStop(0, `rgb(${color.map((c) => Math.round(c * 0.75)).join(',')})`);
+    darkgradient.addColorStop(1, `rgb(${color.map((c) => Math.round(c * 0.5)).join(',')})`);
+    ctx.fillStyle = darkgradient;
+    utils.roundedRect(0, 0, 1000, canvas.height, 50, 0)
+    ctx.fill()
+    ctx.fillStyle = gradient;
+    utils.roundedRect(5, 5, 990, 90, 45, 0)
+    ctx.fill()
+    ctx.fillStyle = darkgradient
+    utils.roundedRect(0, 0, 100, 100, 50, 0)
+    ctx.fill()
+    ctx.fillStyle = radial
+    utils.roundedRect(5, 5, 90, 90, 45, 0)
+    ctx.fill()
+    ctx.fillStyle = gradient
+    utils.roundedRect(5,100,990,canvas.height-105,50,0)
+    ctx.fill()
+    return canvas
+}
+export async function createGameCard(title: string, description: string | (string | Canvas)[] | Canvas, options:{color?: [number, number, number], icon?: Canvas, paranthesesColor?: boolean}) {
+    if (!options.color) options.color = [180, 180, 180]
+    let descFormat = new markdownText(description, '20px Segmento')
+    let titleFormat = new markdownText('&f'+title, '40px Segmento')
+    // Formatting
+    descFormat.splitLines(960)
+    if (options.paranthesesColor) descFormat.paranthesesColor()
+    titleFormat.autoScale(0, 860, 80)
+    // Canvases
+    let descCanvas = descFormat.parseLines(10, 960)
+    let titleCanvas = titleFormat.parseLines(10, 960)
+    let canvas = new Canvas(1000, 130 + descCanvas.height)
+    let ctx = canvas.getContext('2d');
+    const utils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D);
+    // Frame
+    utils.roundedRect(0, 0, 1000, canvas.height, 50, 0)
+    ctx.clip()
+    let h = 0
+    while (h < canvas.height) {
+        ctx.drawImage(await loadImage(GetFile.assets+'/images/metalBack.png'),0,h,1000,500)
+        h += 500
+    }
+    ctx.restore();
+    ctx.drawImage(await loadImage(GetFile.assets+'/images/metalIcon.png'),5,5,90,90)
+    ctx.globalCompositeOperation = 'multiply'
+    ctx.drawImage(await getBackground(canvas.height,options.color),0,0)
+    ctx.globalCompositeOperation = 'source-over'
+    if (options.icon) ctx.drawImage(options.icon, 5, 5, 90, 90)
+    ctx.drawImage(titleCanvas, 110, 10)
+    ctx.drawImage(descCanvas, 20, 110)
+    return canvas;
+}
+export async function getPalette(url: string|Canvas) {
     const quality = 10;
-    let image = (await loadImage(url))
+    let image = url instanceof Canvas?url:(await loadImage(url))
     let canvas = new Canvas(image.width, image.height);
     let ctx = canvas.getContext('2d');
     let pixelCount = image.width * image.height;
@@ -289,13 +420,229 @@ async function getPalette(url: string) {
     }
     const cmap = quantize(pixels as RgbPixel[], 2);
     const palette = cmap ? cmap.palette() : null;
-    let colors = [];
+    let colors:{string:string,color:[number,number,number]}[] = [];
     if (palette) {
         for (let i = 0; i < palette.length; i++) {
-            colors.push(`rgb( ${palette[i][0]} ${palette[i][1]} ${palette[i][2]} )`);
+            colors.push({string:`rgb( ${palette[i][0]} ${palette[i][1]} ${palette[i][2]} )`,color:[palette[i][0],palette[i][1],palette[i][2]]});
         }
     }
     return colors;
+}
+export class markdownText {
+    static colors: { [key: string]: number[] } = { "&0": [0, 0, 0], "&1": [168, 0, 0], '&2': [0, 168, 0], '&3': [168, 168, 0], '&4': [0, 0, 168], '&5': [168, 0, 168], '&6': [252, 168, 0], '&7': [168, 168, 168], '&8': [84, 84, 84], '&9': [84, 84, 252], '&a': [84, 252, 84], '&b': [84, 252, 252], '&c': [252, 84, 84], '&d': [252, 84, 252], '&e': [252, 252, 84], '&f': [252, 252, 252] }
+    static parantheseMap = ['&e', '&9', '&d']
+    static colorRegex = /(&[0-9a-f])/
+    static globalColorRegex = /(&[0-9a-f])/g
+    static fontMultiplier = { title: 2, subtitle: 1.5, header: 1.2 }
+    markdownLines: { size: number, text: string | Canvas, height: number, align: AlignSetting }[] = [];
+    font: string;
+    fontsize: number;
+    fontname: string;
+    constructor(text: string | (string | Canvas)[] | Canvas, font: string = '30px Arial') {
+        if (typeof text == 'string') text = text.split('\n')
+        else if (text instanceof Canvas) text = [text]
+        this.font = font;
+        this.fontsize = parseInt(font.split(' ')[0]);
+        this.fontname = font.split(' ')[1];
+        text.forEach((line) => {
+            let alignment: AlignSetting = 'left';
+            if (line instanceof Canvas) {
+                this.markdownLines.push({ size: line.width, text: line, height: line.height, align: alignment })
+            } else {
+                if (line.startsWith('{c}')) {
+                    alignment = 'center';
+                    line = line.slice(3)
+                } else if (line.startsWith('{r}')) {
+                    alignment = 'right';
+                    line = line.slice(3)
+                }
+                line = line.replace(/[^a-z0-9!"#$'()*+,-./:;<=>?[\\\]^_|& ]/gi, '~')
+                if (line.startsWith('# ')) {
+                    this.markdownLines.push({ size: markdownText.fontMultiplier.title * this.fontsize, text: line.slice(2), height: this.measureFontHeight(`${markdownText.fontMultiplier.title * this.fontsize}px ${this.fontname}`), align: alignment })
+                } else if (line.startsWith('## ')) {
+                    this.markdownLines.push({ size: markdownText.fontMultiplier.subtitle * this.fontsize, text: line.slice(3), height: this.measureFontHeight(`${markdownText.fontMultiplier.subtitle * this.fontsize}px ${this.fontname}`), align: alignment })
+                } else if (line.startsWith('### ')) {
+                    this.markdownLines.push({ size: markdownText.fontMultiplier.header * this.fontsize, text: line.slice(4), height: this.measureFontHeight(`${markdownText.fontMultiplier.header * this.fontsize}px ${this.fontname}`), align: alignment })
+                } else if (line.startsWith('- ')) {
+                    this.markdownLines.push({ size: this.fontsize, text: '   - ' + line.slice(2), height: this.measureFontHeight(this.font), align: alignment })
+                } else {
+                    this.markdownLines.push({ size: this.fontsize, text: line, height: this.measureFontHeight(this.font), align: alignment })
+                }
+            }
+        })
+    }
+    autoScale(index: number, maxW: number, maxH: number, initSize = 10) {
+        let line = this.markdownLines[index]
+        if ((!line) || line.text instanceof Canvas) return;
+        const text = line.text.replace(markdownText.globalColorRegex, '')
+        while (this.measureTextWidth(text, `${initSize}px ${this.fontname}`) < maxW && this.measureFontHeight(`${initSize}px ${this.fontname}`) < maxH) {
+            initSize += 1;
+        }
+        this.markdownLines[index].size = initSize - 1;
+        return this;
+    }
+    paranthesesColor() {
+        let left: number[] = [];
+        let right: number[] = [];
+        let pairs: number[][] = [];
+        let stringLines: { text: string, index: number }[] = [];
+        this.markdownLines.forEach((line, i) => {
+            if (line.text instanceof Canvas) return;
+            let stringLine = { text: line.text, index: i }
+            stringLines.push(stringLine)
+        })
+        stringLines.forEach((line) => {
+            for (let i = 0; i < line.text.length; i++) {
+                const char = line.text[i];
+                if (char === '(') {
+                    left.push(i);
+                } else if (char === ')') {
+                    right.push(i);
+                    let leftIndex = left.pop();
+                    pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
+                }
+            }
+        })
+        stringLines.forEach((line) => {
+            let modifiedStr = line.text.split('').map((char, index) => {
+                if (char === '(') {
+                    let pair = pairs.find(pair => pair[0] === index)
+                    if (pair) {
+                        return `${(pair[2] + 1 == 0) ? '&f' : markdownText.parantheseMap[(pair[2] + 1) % 3]}(`;
+                    }
+                } else if (char === ')') {
+                    let pair = pairs.find(pair => pair[1] === index)
+                    if (pair) {
+                        return `)${(pair[2] <= 0) ? '&f' : markdownText.parantheseMap[pair[2] % 3]}`;
+                    }
+                }
+                return char;
+            }).join('');
+            this.markdownLines[line.index].text = modifiedStr;
+        })
+        return this;
+    }
+    measureFontHeight(font = this.font) {
+        let canvas = new Canvas(100, 100)
+        let ctx = canvas.getContext('2d');
+        ctx.font = font
+        ctx.textBaseline = 'top'
+        ctx.fillText('ACEGIKMOQSUWYZ', 0, 0)
+        fs.writeFileSync('1.png', canvas.toBuffer())
+        const result = trim(canvas)
+        if (result)
+            fs.writeFileSync('2.png', result.toBuffer());
+        return result ? result.height : 100
+    }
+    measureTextWidth(text: string, font: string = this.font) {
+        let canvas = new Canvas(100, 100)
+        let ctx = canvas.getContext('2d');
+        ctx.font = font
+        return ctx.measureText(text).width
+    }
+    splitLines(maxWidth: number, wordBreak = true) {
+        let newLines: { size: number, text: string | Canvas, height: number, align: AlignSetting }[] = [];
+        this.markdownLines.forEach((line, index) => {
+            if (line.text instanceof Canvas) { newLines.push(line); return };
+            let lines = [];
+            let lineSplit = line.text.split(markdownText.globalColorRegex)
+            let words: string[] = []
+            for (let i = 0; i < lineSplit.length; i++) {
+                const line = lineSplit[i];
+                (wordBreak ? line.split(' ') : line.split(''))
+                    .forEach((word) => {
+                        words.push(word)
+                    })
+            }
+            let currentString = ''
+            let spacer = wordBreak ? ' ' : ''
+            words.forEach((word) => {
+                if (word.match(markdownText.colorRegex) || word.length < 1) {
+                    currentString += word;
+                }
+                else if (this.measureTextWidth((currentString + word).replace(markdownText.globalColorRegex, ''), `${line.size}px ${this.fontname}`) > maxWidth) {
+                    lines.push({ text: currentString, size: line.size, height: line.height, align: line.align })
+                    currentString = word + spacer;
+                } else {
+                    currentString += word + spacer;
+                }
+            })
+            if (currentString.length > 0) {
+                lines.push({ text: currentString, size: line.size, height: line.height, align: line.align })
+            }
+            newLines = newLines.concat(lines)
+        })
+        this.markdownLines = newLines;
+        return this;
+    }
+    parseLineColor(text: string, font: string, initColor: string | CanvasGradient | CanvasPattern): [Canvas, CanvasRenderingContext2D] {
+        const [textWidth, textHeight] = [this.measureTextWidth(text, font), this.measureFontHeight(font)];
+        let canvas = new Canvas(textWidth, textHeight)
+        let ctx = canvas.getContext('2d');
+        ctx.textBaseline = 'hanging'
+        ctx.font = font
+        let textSplit = text.split(markdownText.globalColorRegex)
+        let color;
+        let position = 0;
+        ctx.fillStyle = initColor;
+        for (const string in textSplit) {
+            if (textSplit[string].match(markdownText.colorRegex)) {
+                color = markdownText.colors[textSplit[string]]
+                if (!color) color = [255, 255, 255]
+                ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                continue
+            };
+            ctx.fillText(textSplit[string], position, 0)
+            position += ctx.measureText(textSplit[string]).width
+        }
+        if (text.toLowerCase().startsWith('answered')) {
+            fs.writeFileSync('test.png', canvas.toBuffer())
+        }
+        return [canvas, ctx as unknown as CanvasRenderingContext2D];
+    }
+    parseLines(padding: number = 0, width: number = 0) {
+        let height = 0;
+        let maxWidth = 0;
+        this.markdownLines.forEach((line) => {
+            if (!line) line = { size: this.fontsize, text: ' ', height: this.measureFontHeight(), align: 'left' }
+            if (line.text instanceof Canvas) {
+                height += line.text.height + padding
+                if (line.text.width > maxWidth) maxWidth = line.text.width;
+                return;
+            };
+            const textW = this.measureTextWidth(line.text, `${line.size}px ${this.fontname}`)
+            const textH = this.measureFontHeight(`${line.size}px ${this.fontname}`)
+            height += textH
+            if (textW > maxWidth) return maxWidth = textW;
+        })
+        width = width > 0 ? width : maxWidth;
+        let canvas = new Canvas(width, height + padding * (this.markdownLines.length - 1))
+        let ctx = canvas.getContext('2d');
+        height = 0
+        this.markdownLines.forEach((line, index) => {
+            if (!(line.text instanceof Canvas)) {
+                let text = this.parseLineColor(line.text, `${line.size}px ${this.fontname}`, ctx.fillStyle)
+                line.text = text[0]
+                ctx.fillStyle = text[1].fillStyle
+            }
+            const textWidth = line.text.width;
+            let x = 0
+            switch (line.align) {
+                case 'center': {
+                    x = (width - textWidth) / 2
+                } break;
+                case 'left': {
+                    x = 0
+                } break;
+                case 'right': {
+                    x = width - textWidth
+                } break;
+            }
+            ctx.drawImage(line.text, x, height)
+            height += line.height + padding
+        })
+        return canvas;
+    }
 }
 export class DialogueRowBuilder extends ActionRowBuilder<StringSelectMenuBuilder> {
     parent: Dialogue;
@@ -366,7 +713,6 @@ export class Dialogue {
     startCollection(message: Message, time = 60000, filter: (interaction: StringSelectMenuInteraction<"cached">) => boolean = () => { return true }) {
         let collector = message.channel.createMessageComponentCollector({ componentType: ComponentType.StringSelect, time: time, filter: (interaction: StringSelectMenuInteraction<"cached">) => { return interaction.customId == 'dialogue' && interaction.message.id == message.id && filter(interaction) } })
         collector.on('collect', (interaction) => {
-            console.log('collected')
             this.options.forEach(option => {
                 if (option.id == interaction.values[0]) {
                     option.callBack()
@@ -384,7 +730,7 @@ export class DialogueOption extends Dialogue {
         this.callback = callback
     }
 }
-export function measureText(text: string, font:string) {
+export function measureText(text: string, font: string) {
     let canvas = new Canvas(1, 1);
     let ctx = canvas.getContext('2d');
     ctx.font = font;
@@ -404,7 +750,7 @@ export class ContextUtilities {
         this.context.fillStyle = gradient
         return this
     }
-    roundedRect(x: number, y: number, width: number, height: number, radius: number,lineWidth=0) {
+    roundedRect(x: number, y: number, width: number, height: number, radius: number, lineWidth = 0) {
         this.context.beginPath();
         this.context.lineWidth = lineWidth;
         this.context.moveTo(x + radius + lineWidth / 2, y + lineWidth / 2);
@@ -480,16 +826,22 @@ export class ContextUtilities {
 //
 // Trading Card Game Utilities
 //
-export function cardDraw(guarantee: boolean) {
+export function cardDraw(guarantee: boolean, pity = 0) {
     let cards = GetFile.tradecardManifest().cards
-    cards = cards.sort(() => Math.random() - 0.5);
-    let weightTotal = cards.reduce((acc, card) => acc + (card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2), 0)
-    let threshold = randomInt(0, weightTotal)
+    let rankedCards: card[][] = [[], [], []]
+    cards.forEach(card => {
+        if (typeof card.rank == 'number') rankedCards[card.rank - 1].push(card)
+    })
+    let cardBool = guarantee ? true : Math.random() < 0.1
+    let threshold = randomInt(0, 1000)
     let card;
-    if (guarantee || randomInt(0, 100) < 5) {
-        for (let card of cards) {
-            threshold -= card.rank == 1 ? 50 : card.rank == 2 ? 25 : 2
-            if (threshold <= 0) return card
+    if (cardBool) {
+        if (threshold < (6 + pity * 3)) {
+            return getRandomObject(rankedCards[2])
+        } else if (threshold < 206) {
+            return getRandomObject(rankedCards[1])
+        } else {
+            return getRandomObject(rankedCards[0])
         }
     }
     return card
@@ -510,7 +862,7 @@ export async function addFrame(source: string | Canvas, rank: number | string, s
     try {
         frame = await loadImage(GetFile.assets + `/images/tradecards/frames/${rank}star.png`);
     } catch {
-       frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
+        frame = await loadImage(GetFile.assets + '/images/tradecards/frames/default.png');
     }
     ctx.drawImage(sourceImage, 0, 0, 1000 * scale, 1400 * scale)
     ctx.drawImage(frame, 0, 0, 1000 * scale, 1400 * scale)
@@ -551,7 +903,6 @@ export async function openChestGif(background: string, rank: number | string) {
     encoder.setRepeat(-1)
     encoder.start()
     let frames = fs.readdirSync(GetFile.assets + '/images/tradecards/chestgif')
-    console.log(frames)
     for (let i = 0; i < 25; i++) {
         let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/1.gif')
         let canvas = new Canvas(250, 350)
@@ -592,13 +943,13 @@ export async function getLeaderCard(users: (GuildMember | User)[], resolution = 
     }
     return canvas
 }
-export function getWord(length:number) {
+export function getWord(length: number) {
     const words = GetFile.wordList()
     const filteredWords = words.filter(word => word.length === length);
     let randomWord
     if (filteredWords.length > 0) {
-    const randomIndex = Math.floor(Math.random() * filteredWords.length);
-    randomWord = filteredWords[randomIndex];
+        const randomIndex = Math.floor(Math.random() * filteredWords.length);
+        randomWord = filteredWords[randomIndex];
     } else {
         const randomIndex = Math.floor(Math.random() * words.length);
         randomWord = words[randomIndex]
@@ -654,7 +1005,7 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     context.fillText(`${user.user.xp - lastRequirement} / ${requirement - lastRequirement} XP`, (1025 - wid) * resolution, 180 * resolution);
     return canvas;
 }
-function modColor(color:[number,number,number],modifier: number) {
+function modColor(color: [number, number, number], modifier: number) {
     let newColor = color.map((value, index) => {
         let newValue = value + modifier
         if (newValue > 255) newValue = 255
@@ -733,9 +1084,9 @@ export function createColorText(str: string) {
     }).join('');
     return colorEncoder(modifiedStr);
 }
-export function hexToRgb(hex:string) {
+export function hexToRgb(hex: string) {
     var res = hex.match(/[a-f0-9]{2}/gi);
     return res && res.length === 3
-      ? res.map(function(v) { return parseInt(v, 16) })
-      : null;
+        ? res.map(function (v) { return parseInt(v, 16) })
+        : null;
 }

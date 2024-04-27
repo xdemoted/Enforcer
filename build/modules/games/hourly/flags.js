@@ -36,6 +36,19 @@ const discord_js_1 = require("discord.js");
 const gamemanager_1 = require("../../gamemanager");
 const utilities_1 = require("../../utilities");
 const data_1 = __importStar(require("../../data"));
+const canvas_1 = require("canvas");
+function generateFlag(strokeColor) {
+    let canvas = new canvas_1.Canvas(250, 250);
+    let ctx = canvas.getContext('2d');
+    let ctxUtils = new utilities_1.ContextUtilities(ctx);
+    ctx.fillStyle = `rgb(${strokeColor[0]},${strokeColor[1]},${strokeColor[2]})`;
+    ctxUtils.roundedRect(63, 25, 10, 200, 5, 0);
+    ctx.fill();
+    ctxUtils.roundedRect(78, 25, 100, 75, 5, 10);
+    ctx.strokeStyle = `rgb(${strokeColor[0]},${strokeColor[1]},${strokeColor[2]})`;
+    ctx.stroke();
+    return canvas;
+}
 class flags extends gamemanager_1.baseGame {
     constructor(client, channel) {
         super(client, channel);
@@ -43,7 +56,7 @@ class flags extends gamemanager_1.baseGame {
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.channel instanceof discord_js_1.TextChannel) {
-                let embed = new discord_js_1.EmbedBuilder().setTitle("Flag Guesser").setDescription("Guess the country of the flag.").setTimestamp().setColor("Aqua");
+                // Answer Setup
                 let codes = require(data_1.GetFile.assets + '/countrycodes.json');
                 let code = Object.keys(codes.countries)[(0, utilities_1.random)(0, Object.keys(codes.countries).length)];
                 let options = [];
@@ -56,12 +69,22 @@ class flags extends gamemanager_1.baseGame {
                 }
                 options.push(code);
                 options = options.sort(() => Math.random() - 0.5);
+                // Action Row Setup
                 let row = new discord_js_1.ActionRowBuilder().addComponents(new discord_js_1.StringSelectMenuBuilder().setCustomId("flag").setPlaceholder("Select a country").addOptions(options.map((option, index) => {
                     return { label: codes.countries[option], value: option };
                 })));
-                embed.setURL(`https://flagcdn.com/w2560/${code}.png`);
-                embed.setImage(`https://flagcdn.com/w2560/${code}.png`);
-                let message = yield this.channel.send({ embeds: [embed], components: [row] });
+                // Image Setup
+                let image = yield (0, utilities_1.createImageCanvas)(`https://flagcdn.com/w2560/${code}.png`, [460, 0], 10);
+                const palette = yield (0, utilities_1.getPalette)(image);
+                let color = palette[0].color.map((color) => Math.round(color * 0.71));
+                if (color[0] < 50 && color[1] < 50 && color[2] < 50)
+                    color = [180, 180, 180];
+                let GameImageDesc = [image, '# &fWhich Country is This?']
+                    .concat(options.map((option) => { return `- &7${codes.countries[option]}&f`; }));
+                GameImageDesc.push(' ');
+                let GameImage = yield (0, utilities_1.createGameCard)('&fFlag Guesser', GameImageDesc, { color: color, icon: generateFlag([255, 255, 255]) });
+                let attachment = new discord_js_1.AttachmentBuilder(GameImage.toBuffer(), { name: 'flag.png' });
+                let message = yield this.channel.send({ files: [attachment], components: [row] });
                 this.message = message;
                 let collector = message.createMessageComponentCollector({ time: 3600000 });
                 let answerers = [];
@@ -73,13 +96,17 @@ class flags extends gamemanager_1.baseGame {
                         else {
                             answerers.push(interaction.user.id);
                             let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
-                            console.log(code, options, interaction.values[0]);
                             if (interaction.values[0] == code) {
                                 interaction.deferUpdate();
                                 this.emit('correctanswer', interaction, 200);
                                 CorrectAnswerers.push(interaction.user.id);
-                                embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: interaction.member.displayName, inline: true }]);
-                                message.edit({ embeds: [embed], components: [row] });
+                                if (GameImageDesc[GameImageDesc.length - 1] == ' ') {
+                                    GameImageDesc.push('## Correct Answerers');
+                                }
+                                GameImageDesc.push('- &7' + interaction.member.displayName + '&f');
+                                GameImage = yield (0, utilities_1.createGameCard)('Flag Guesser', GameImageDesc, { color: color, icon: generateFlag([255, 255, 255]) });
+                                attachment = new discord_js_1.AttachmentBuilder(GameImage.toBuffer(), { name: 'flag.png' });
+                                message.edit({ files: [attachment], components: [row] });
                             }
                             else {
                                 user.addXP(25, this.channel.id);

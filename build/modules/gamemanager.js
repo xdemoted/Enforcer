@@ -40,10 +40,9 @@ const discord_js_1 = require("discord.js");
 const data_1 = __importStar(require("./data"));
 const utilities_1 = require("./utilities");
 const fs_1 = __importDefault(require("fs"));
-const quizbowl_1 = __importDefault(require("./games/special/quizbowl"));
 const RunTimeEvents_1 = require("./RunTimeEvents");
 const counting_1 = __importDefault(require("./games/special/counting"));
-let debug; // = 'math.js'
+let debug;
 class baseGame extends data_1.eventEmitter {
     constructor(client, channel) {
         super();
@@ -116,7 +115,7 @@ class GameManager {
             for (let guild in this.guilds) {
                 let guildData = this.guilds[guild];
                 if (guildData.quizbowlChan) {
-                    guildData.quizbowl = new quizbowl_1.default(this.client, guildData.quizbowlChan.id);
+                    //guildData.quizbowl = new quizbowl(this.client, guildData.quizbowlChan.id)
                 }
             }
         });
@@ -138,9 +137,9 @@ class GameManager {
             }
         });
     }
-    reward(msg_1) {
-        return __awaiter(this, arguments, void 0, function* (msg, reward = 200) {
-            var _a, _b, _c;
+    reward(msg, reward = 200) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
             // guildID, Channel, Author, User
             reward = Math.round(reward);
             if (msg.guildId == undefined)
@@ -168,6 +167,8 @@ class GameManager {
             }
             rewardMsg = yield ((_c = msg.channel) === null || _c === void 0 ? void 0 : _c.send(data_1.MessageManager.getMessage('rewards.generic', [user.id, reward, 10, gemReward])));
             setTimeout(() => {
+                if (msg instanceof discord_js_1.Message && msg.deletable)
+                    msg.delete();
                 rewardMsg === null || rewardMsg === void 0 ? void 0 : rewardMsg.delete();
             }, 10000);
         });

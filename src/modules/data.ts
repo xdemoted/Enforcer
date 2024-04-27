@@ -301,11 +301,13 @@ export class BaseUser {
 export class GlobalUser extends BaseUser {
     namecard: string
     gems: number
+    pity: number
     inventory: {
         cards: number[]
     }
     constructor(id: string) {
         super(id)
+        this.pity = 0
         this.namecard = ''
         this.gems = 0
         this.inventory = {
@@ -574,14 +576,16 @@ export class namecardManifest {
         this.namecards = []
     }
 }
+export type card = {
+    id: number,
+    title: string,
+    rank: number,
+    description: string,
+    background: string
+
+}
 export type TradecardManifest = {
-    cards: {
-        id: number,
-        title: string,
-        rank: number | string,
-        description: string,
-        background: string
-    }[],
+    cards: card[],
     collections: {
         id: number,
         title: string,

@@ -10,8 +10,38 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const utilities_1 = require("../../utilities");
 const gamemanager_1 = require("../../gamemanager");
+const utilities_1 = require("../../utilities");
+const canvas_1 = require("canvas");
+function generateCalculator(strokeColor) {
+    let canvas = new canvas_1.Canvas(250, 250);
+    let ctx = canvas.getContext('2d');
+    let ctxUtils = new utilities_1.ContextUtilities(ctx);
+    ctx.strokeStyle = `rgb(${strokeColor[0]},${strokeColor[1]},${strokeColor[2]})`;
+    ctxUtils.roundedRect(75, 50, 100, 135, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(85, 60, 80, 30, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(85, 95, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(113, 95, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(141, 95, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(85, 123, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(113, 123, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(141, 123, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(85, 151, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(113, 151, 24, 24, 5, 5);
+    ctx.stroke();
+    ctxUtils.roundedRect(141, 151, 24, 24, 5, 5);
+    ctx.stroke();
+    return canvas;
+}
 class math extends gamemanager_1.baseGame {
     constructor(client, channel) {
         super(client, channel);
@@ -19,59 +49,38 @@ class math extends gamemanager_1.baseGame {
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             let difficulty = (0, utilities_1.random)(1, 3);
-            let equation = ['error: type 0 to answer correctly', 0];
-            let color = "Green";
-            switch (difficulty) {
-                case 1:
-                    {
-                        equation = (0, utilities_1.generateEquation)(utilities_1.maps.easy);
-                    }
-                    break;
-                case 2:
-                    {
-                        equation = (0, utilities_1.generateEquation)(utilities_1.maps.medium);
-                        color = "Yellow";
-                    }
-                    break;
-                case 3:
-                    {
-                        equation = (0, utilities_1.generateEquation)(utilities_1.maps.hard);
-                        color = "Red";
-                    }
-                    break;
-            }
-            let image = (0, utilities_1.createColorText)(equation[0]);
-            let attachment = new discord_js_1.AttachmentBuilder(image.toBuffer(), { name: "equation.png" });
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Solve the math problem.").setDescription(equation[0]).setImage('attachment://equation.png').setTimestamp().setFooter({ text: "Solve for " + difficulty * 100 + "xp" }).setColor(color);
-            let answer = equation[1];
-            if (this.channel instanceof discord_js_1.TextChannel) {
-                this.message = yield this.channel.send({ embeds: [embed], files: [attachment] });
-                this.collector = this.channel.createMessageCollector({ time: 3600000 });
-                this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
-                    var _a;
-                    if (msg.content.replace(/[^-0-9]/g, "") == answer.toString()) {
-                        this.emit('correctanswer', msg, difficulty * 100);
-                        embed.setFields([{ name: "Answer", value: answer.toString(), inline: true }])
-                            .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} solved the problem.`)
-                            .setFooter({ text: "Solved for " + difficulty * 100 + " xp" });
-                        if (this.message)
-                            this.message.edit({ embeds: [embed] });
-                        if (this.collector)
-                            this.collector.stop();
-                        setTimeout(() => {
-                            if (msg.deletable)
-                                msg.delete();
-                        }, 5000);
-                    }
-                }));
-            }
+            const equation = utilities_1.MathGenerator.generateEquation((difficulty == 1) ? utilities_1.maps.easy : (difficulty == 2) ? utilities_1.maps.medium : utilities_1.maps.hard);
+            const color = (difficulty == 1) ? [40, 180, 40] : (difficulty == 2) ? [180, 180, 40] : [180, 40, 40];
+            const reward = difficulty * 100;
+            let text = [
+                `## &f${equation[0]}`,
+                '&f',
+                '{c}## &fUnanswered'
+            ];
+            const canvas = yield (0, utilities_1.createGameCard)('&fSolve The Equation', text, { color: color, icon: generateCalculator([255, 255, 255]), paranthesesColor: true });
+            const attachment = new discord_js_1.AttachmentBuilder(canvas.toBuffer(), { name: 'calculator.png' });
+            this.message = yield this.channel.send({ files: [attachment] });
+            this.collector = this.channel.createMessageCollector({ time: 3600000 });
+            this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
+                if (msg.content == equation[1].toString() && this.message) {
+                    this.emit('correctanswer', msg, reward);
+                    text.splice(2, 1, `{c}# &b${msg.author.displayName} solved the equation`);
+                    const canvas = yield (0, utilities_1.createGameCard)('&fSolve The Equation', text, { color: [180, 180, 180], icon: generateCalculator([255, 255, 255]), paranthesesColor: true });
+                    const attachment = new discord_js_1.AttachmentBuilder(canvas.toBuffer(), { name: 'calculator.png' });
+                    this.message.edit({ files: [attachment] });
+                    if (this.collector)
+                        this.collector.stop();
+                }
+            }));
         });
     }
     end() {
-        if (this.message && this.message.deletable)
+        if (this.message && this.message.deletable) {
             this.message.delete();
+        }
         if (this.collector)
             this.collector.stop();
     }
 }
+exports.default = math;
 exports.default = math;

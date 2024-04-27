@@ -22,8 +22,8 @@ class level extends commands_1.baseCommand {
         this.serverManager = commandData.serverManager;
     }
     execute(interaction) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
             let auser = (_a = interaction.options.get("user")) === null || _a === void 0 ? void 0 : _a.user;
             if (auser) {
                 this.user = this.serverManager.getMember(auser.id);
