@@ -299,6 +299,7 @@ exports.BaseUser = BaseUser;
 class GlobalUser extends BaseUser {
     constructor(id) {
         super(id);
+        this.pity = 0;
         this.namecard = '';
         this.gems = 0;
         this.inventory = {

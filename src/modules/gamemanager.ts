@@ -12,7 +12,7 @@ export interface baseGame {
     emit(event: 'correctanswer', msg: Message | Interaction, reward: number): boolean;
 }
 
-let debug:undefined|string// = 'math.js'
+let debug:undefined|string
 export class baseGame extends eventEmitter {
     client: Client;
     channel: TextChannel;
@@ -86,7 +86,7 @@ export default class GameManager {
             for (let guild in this.guilds) {
                 let guildData = this.guilds[guild]
                 if (guildData.quizbowlChan) {
-                    guildData.quizbowl = new quizbowl(this.client, guildData.quizbowlChan.id)
+                    //guildData.quizbowl = new quizbowl(this.client, guildData.quizbowlChan.id)
                 }
             }
         })
@@ -135,6 +135,7 @@ export default class GameManager {
         }
         rewardMsg = await msg.channel?.send(MessageManager.getMessage('rewards.generic', [user.id, reward, 10, gemReward]))
         setTimeout(() => {
+            if (msg instanceof Message && msg.deletable) msg.delete()
             rewardMsg?.delete()
         }, 10000)
     }

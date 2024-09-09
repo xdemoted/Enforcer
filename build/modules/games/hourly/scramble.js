@@ -42,28 +42,32 @@ class scramble extends gamemanager_1.baseGame {
             while (word == scrambledWord) {
                 scrambledWord = scramble.wordScramble(word);
             }
-            let embed = new discord_js_1.EmbedBuilder().setTitle("Unscramble The Word").setDescription(scrambledWord).setTimestamp().setColor(difficulty == 1 ? "Green" : difficulty == 2 ? "Yellow" : "Red");
-            const reward = Math.round(100 * ((length - 3) ** 0.75));
-            embed.setFooter({ text: "Unscramble for " + reward + "xp" });
-            this.message = yield this.channel.send({ embeds: [embed] });
+            let text = [
+                `{c}## &f${scrambledWord}`,
+                '&f',
+                '{c}## &fUnanswered'
+            ];
+            console.log(word, scrambledWord, difficulty);
+            const color = (difficulty == 1) ? [40, 180, 40] : (difficulty == 2) ? [180, 180, 40] : [180, 40, 40];
+            const canvas = yield (0, utilities_1.createGameCard)('&fUnscramble The Word', text, { color: color, paranthesesColor: true });
+            const attachment = new discord_js_1.AttachmentBuilder(canvas.toBuffer(), { name: 'calculator.png' });
+            const reward = 100 * difficulty;
+            this.message = yield this.channel.send({ files: [attachment] });
             let solved = false;
             this.collector = this.channel.createMessageCollector({ time: 3600000 });
             this.collector.on('collect', (msg) => __awaiter(this, void 0, void 0, function* () {
-                var _a;
                 if (msg.content.toLowerCase() == word.toLowerCase() && this.message) {
                     this.emit('correctanswer', msg, reward);
                     solved = true;
-                    embed.setFields([{ name: "Answer", value: word, inline: true }])
-                        .setTitle(`${(_a = msg.member) === null || _a === void 0 ? void 0 : _a.displayName} unscrambled the word.`)
-                        .setFooter({ text: "Unscrambled for " + reward + "xp" })
-                        .setColor("NotQuiteBlack");
-                    this.message.edit({ embeds: [embed] });
+                    let text = [
+                        `{c}## &f${scrambledWord} = ${word}`,
+                        '&f',
+                        `{c}## &b${msg.author.displayName} Unscrambled the word`
+                    ];
+                    const canvas = yield (0, utilities_1.createGameCard)('&fUnscramble The Word', text, { color: [180, 180, 180], paranthesesColor: true });
+                    this.message.edit({ files: [new discord_js_1.AttachmentBuilder(canvas.toBuffer(), { name: 'calculator.png' })] });
                     if (this.collector)
                         this.collector.stop();
-                    setTimeout(() => {
-                        if (msg.deletable)
-                            msg.delete();
-                    }, 10000);
                 }
             }));
         });

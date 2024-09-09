@@ -56,8 +56,8 @@ class CommandExecutor {
         }
     }
     execute(interaction) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             let data = this.commandMap.get(interaction.commandName);
             if (data) {
                 if (interaction.guildId == null)

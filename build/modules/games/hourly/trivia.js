@@ -48,48 +48,51 @@ class trivia extends gamemanager_1.baseGame {
         return __awaiter(this, void 0, void 0, function* () {
             let embed = new discord_js_1.EmbedBuilder().setTitle("Trivia").setTimestamp().setColor("Green");
             if (this.channel instanceof discord_js_1.TextChannel) {
-                let difficulty = "easy";
-                switch ((0, utilities_1.random)(1, 3)) {
-                    case 2:
-                        difficulty = "medium";
-                        embed.setColor("Yellow");
-                        break;
-                    case 3:
-                        difficulty = "hard";
-                        embed.setColor("Red");
-                        break;
-                    default:
-                        break;
-                }
+                let difficulty = (0, utilities_1.random)(1, 3);
+                const color = (difficulty == 1) ? [40, 180, 40] : (difficulty == 2) ? [180, 180, 40] : [180, 40, 40];
                 let trivia;
                 try {
-                    trivia = (yield axios_1.default.get(`https://the-trivia-api.com/api/questions?limit=1&difficulty=${difficulty}`)).data[0];
+                    trivia = (yield axios_1.default.get(`https://the-trivia-api.com/api/questions?limit=1&difficulty=${(difficulty == 1) ? 'easy' : (difficulty == 2) ? 'medium' : 'hard'}`)).data[0];
                 }
                 catch (error) {
                     return console.log(error);
                 }
                 let answers = trivia.incorrectAnswers.concat(trivia.correctAnswer);
+                answers = answers.sort(() => Math.random() - 0.5);
                 let answerIndex = answers.indexOf(trivia.correctAnswer);
-                let selectmenu = new discord_js_1.StringSelectMenuBuilder().setCustomId("trivia").setPlaceholder("Select an answer").addOptions(answers.map((answer, index) => {
-                    return { label: answer, value: index.toString() };
-                }));
                 let row = new discord_js_1.ActionRowBuilder()
-                    .addComponents(selectmenu);
-                embed.setDescription((0, utilities_1.stringMax)(trivia.question, 4096));
-                this.message = yield this.channel.send({ embeds: [embed], components: [row] });
+                    .addComponents(new discord_js_1.StringSelectMenuBuilder().setCustomId("trivia").setPlaceholder("Select an answer").addOptions(answers.map((answer, index) => {
+                    return { label: answer, value: index.toString() };
+                })));
+                let text = [
+                    '## &f' + trivia.question,
+                    `&f- &7${answers[0]}`,
+                    `&f- &7${answers[1]}`,
+                    `&f- &7${answers[2]}`,
+                    `&f- &7${answers[3]}`,
+                    '&f ',
+                    '{c}## &fUnanswered'
+                ];
+                const canvas = yield (0, utilities_1.createGameCard)('&fAnswer The Trivia', text, { color: color });
+                this.message = yield this.channel.send({ files: [new discord_js_1.AttachmentBuilder(canvas.toBuffer(), { name: 'trivia.png' })], components: [row] });
                 let answerers = [];
                 let CorrectAnswerers = [];
-                console.log("Trivia:", trivia.correctAnswer);
                 this.collector = this.channel.createMessageComponentCollector({ time: 3600000, message: this.message }).on('collect', (interaction) => __awaiter(this, void 0, void 0, function* () {
                     let member = interaction.member;
                     if (interaction.customId == "trivia" && interaction instanceof discord_js_1.StringSelectMenuInteraction && !answerers.includes(interaction.user.id) && member instanceof discord_js_1.GuildMember) {
                         answerers.push(interaction.user.id);
                         if (interaction.values[0] == answerIndex.toString() && this.message) {
                             CorrectAnswerers.push(interaction.user.id);
-                            this.emit('correctanswer', interaction, Math.round(trivia.difficulty == "easy" ? 100 : trivia.difficulty == "medium" ? 200 : 300) / CorrectAnswerers.length);
+                            this.emit('correctanswer', interaction, (100 * difficulty));
                             interaction.deferUpdate();
-                            embed.addFields([{ name: (0, utilities_1.numberedStringArraySingle)('', CorrectAnswerers.length - 1), value: member.displayName, inline: true }]);
-                            this.message.edit({ embeds: [embed], components: [row] });
+                            if (text[text.length - 1] == '{c}## &fUnanswered') {
+                                text.splice(text.length - 1, 1, `## &fCorrect Answerers`);
+                                text.push(`&f- &7${member.displayName}`);
+                            }
+                            else
+                                text.push(`&f- &7${member.displayName}`);
+                            const canvas = yield (0, utilities_1.createGameCard)('&fAnswer The Trivia', text, { color: color });
+                            this.message.edit({ files: [new discord_js_1.AttachmentBuilder(canvas.toBuffer(), { name: 'trivia.png' })], components: [row] });
                         }
                         else {
                             let user = new data_1.GuildMemberManager(data_1.default.getGuildManager(interaction.guildId ? interaction.guildId : '').getMember(interaction.user.id));
