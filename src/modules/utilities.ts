@@ -12,12 +12,11 @@ const quantize = require('quantize');
 const startChance = 0.01
 const valueMap = { "+": 10, "-": 20, "*": 30, "/": 40 }
 function trim(c: Canvas) {
-
-    let ctx = c.getContext('2d'),
+    let i, x, y;
+    const ctx = c.getContext('2d'),
         copy = new Canvas(0, 0).getContext('2d'),
         pixels = ctx.getImageData(0, 0, c.width, c.height),
         l = pixels.data.length,
-        i, x, y,
         bound: { top: number | null, left: null | number, right: null | number, bottom: null | number } = { top: null, left: null, right: null, bottom: null };
     for (i = 0; i < l; i += 4) {
         if (pixels.data[i + 3] !== 0) {
@@ -113,10 +112,10 @@ export class MathGenerator {
                     }
                     break;
 
-                case 2:
-                    const randomMultiple = randoms[i]
-                    const randomX = random(-3, 3)
-                    const randomConst = random(-10, 10)
+                case 2: {
+                    const randomMultiple = randoms[i],
+                        randomX = random(-3, 3),
+                        randomConst = random(-10, 10);
                     if (i == 0) {
                         string += `${randomMultiple}(${formatter(randomX) + "x"}${sign(randomConst)})`;
                     } else {
@@ -126,6 +125,7 @@ export class MathGenerator {
                     if (i == terms - 1) {
                         string += (" = " + final);
                     }
+                }
                 default:
                     break;
             }
@@ -330,8 +330,8 @@ export async function createNameCard(url: string, accentColor?: string, resoluti
     ctx.drawImage(await createTemplate(url, resolution), 0, 0, 1200, 300)
     return canvas;
 }
-async function getBackground(h:number,color:[number,number,number]) {
-    const canvas = new Canvas(1000,h)
+async function getBackground(h: number, color: [number, number, number]) {
+    const canvas = new Canvas(1000, h)
     const ctx = canvas.getContext('2d')
     const utils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
     const radial = ctx.createRadialGradient(50, 50, 0, 50, 50, 50);
@@ -357,14 +357,14 @@ async function getBackground(h:number,color:[number,number,number]) {
     utils.roundedRect(5, 5, 90, 90, 45, 0)
     ctx.fill()
     ctx.fillStyle = gradient
-    utils.roundedRect(5,100,990,canvas.height-105,50,0)
+    utils.roundedRect(5, 100, 990, canvas.height - 105, 50, 0)
     ctx.fill()
     return canvas
 }
-export async function createGameCard(title: string, description: string | (string | Canvas)[] | Canvas, options:{color?: [number, number, number], icon?: Canvas, paranthesesColor?: boolean}) {
+export async function createGameCard(title: string, description: string | (string | Canvas)[] | Canvas, options: { color?: [number, number, number], icon?: Canvas, paranthesesColor?: boolean }) {
     if (!options.color) options.color = [180, 180, 180]
     const descFormat = new markdownText(description, '20px Segmento')
-    const titleFormat = new markdownText('&f'+title, '40px Segmento')
+    const titleFormat = new markdownText('&f' + title, '40px Segmento')
     // Formatting
     descFormat.splitLines(960)
     if (options.paranthesesColor) descFormat.paranthesesColor()
@@ -380,22 +380,22 @@ export async function createGameCard(title: string, description: string | (strin
     ctx.clip()
     let h = 0
     while (h < canvas.height) {
-        ctx.drawImage(await loadImage(GetFile.assets+'/images/metalBack.png'),0,h,1000,500)
+        ctx.drawImage(await loadImage(GetFile.assets + '/images/metalBack.png'), 0, h, 1000, 500)
         h += 500
     }
     ctx.restore();
-    ctx.drawImage(await loadImage(GetFile.assets+'/images/metalIcon.png'),5,5,90,90)
+    ctx.drawImage(await loadImage(GetFile.assets + '/images/metalIcon.png'), 5, 5, 90, 90)
     ctx.globalCompositeOperation = 'multiply'
-    ctx.drawImage(await getBackground(canvas.height,options.color),0,0)
+    ctx.drawImage(await getBackground(canvas.height, options.color), 0, 0)
     ctx.globalCompositeOperation = 'source-over'
     if (options.icon) ctx.drawImage(options.icon, 5, 5, 90, 90)
     ctx.drawImage(titleCanvas, 110, 10)
     ctx.drawImage(descCanvas, 20, 110)
     return canvas;
 }
-export async function getPalette(url: string|Canvas) {
+export async function getPalette(url: string | Canvas) {
     const quality = 10;
-    const image = url instanceof Canvas?url:(await loadImage(url))
+    const image = url instanceof Canvas ? url : (await loadImage(url))
     const canvas = new Canvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
     const pixelCount = image.width * image.height;
@@ -417,10 +417,10 @@ export async function getPalette(url: string|Canvas) {
     }
     const cmap = quantize(pixels as RgbPixel[], 2);
     const palette = cmap ? cmap.palette() : null;
-    const colors:{string:string,color:[number,number,number]}[] = [];
+    const colors: { string: string, color: [number, number, number] }[] = [];
     if (palette) {
         for (let i = 0; i < palette.length; i++) {
-            colors.push({string:`rgb( ${palette[i][0]} ${palette[i][1]} ${palette[i][2]} )`,color:[palette[i][0],palette[i][1],palette[i][2]]});
+            colors.push({ string: `rgb( ${palette[i][0]} ${palette[i][1]} ${palette[i][2]} )`, color: [palette[i][0], palette[i][1], palette[i][2]] });
         }
     }
     return colors;
@@ -539,7 +539,7 @@ export class markdownText {
     }
     splitLines(maxWidth: number, wordBreak = true) {
         let newLines: { size: number, text: string | Canvas, height: number, align: AlignSetting }[] = [];
-        this.markdownLines.forEach((line, index) => {
+        this.markdownLines.forEach((line) => {
             if (line.text instanceof Canvas) { newLines.push(line); return }
             const lines = [];
             const lineSplit = line.text.split(markdownText.globalColorRegex)
@@ -616,7 +616,7 @@ export class markdownText {
         const canvas = new Canvas(width, height + padding * (this.markdownLines.length - 1))
         const ctx = canvas.getContext('2d');
         height = 0
-        this.markdownLines.forEach((line, index) => {
+        this.markdownLines.forEach((line) => {
             if (!(line.text instanceof Canvas)) {
                 const text = this.parseLineColor(line.text, `${line.size}px ${this.fontname}`, ctx.fillStyle)
                 line.text = text[0]
@@ -758,7 +758,7 @@ export class ContextUtilities {
         this.context.closePath();
         return this;
     }
-    roundedBorder(x: number, y: number, width: number, height: number, radius: number, lineWidth: number, ctx: CanvasRenderingContext2D = this.context) {
+    roundedBorder(x: number, y: number, width: number, height: number, radius: number, lineWidth: number) {
         this.roundedRect(x + lineWidth / 2, y + lineWidth / 2, width - lineWidth, height - lineWidth, radius);
         return this;
     }
@@ -907,7 +907,7 @@ export async function openChestGif(background: string, rank: number | string) {
         ctx.fillStyle = '#313338'
         ctx.fillRect(0, 0, 250, 350)
         ctx.drawImage(image, Math.round(randomInt(i + 1) - (i + 1) / 2), Math.round(randomInt(i + 1) - (i + 1) / 2), 250, 350)
-        //@ts-ignore
+        //@ts-expect-error
         encoder.addFrame(ctx)
     }
     for (let i = 0; i < frames.length; i++) {
@@ -925,7 +925,7 @@ export async function openChestGif(background: string, rank: number | string) {
         ctx.lineTo(0, 0)
         ctx.clip()
         if (i != 0) ctx.drawImage(image2, 55 - (55 / 7) * (i + 1), 197 - (197 / 7) * (i + 1), 144 + ((250 - 144) / 7) * (i + 1), 202 + ((350 - 202) / 7) * (i + 1))
-        //@ts-ignore
+        //@ts-expect-error
         encoder.addFrame(ctx)
         //if (i == 0) encoder.setDelay(50)
     }
@@ -1003,7 +1003,7 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     return canvas;
 }
 function modColor(color: [number, number, number], modifier: number) {
-    const newColor = color.map((value, index) => {
+    const newColor = color.map((value) => {
         let newValue = value + modifier
         if (newValue > 255) newValue = 255
         if (newValue < 0) newValue = 0
@@ -1022,10 +1022,9 @@ export function colorEncoder(str: string) {
     if (parts[0].length == 0) parts.splice(0, 1);
     let length = 0;
     let canvas = new Canvas(1, 1);
-    let ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     ctx.font = '160px Segmento';
     canvas = new Canvas(ctx.measureText(modifiedStr).width + 100, 500)
-    ctx = canvas.getContext('2d')
     ctx.font = '160px Segmento';
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
@@ -1034,7 +1033,7 @@ export function colorEncoder(str: string) {
             if (parts[i - 1] && parts[i - 1].startsWith('&')) {
                 color = colorMap[parts[i - 1]]
             } else color = [255, 255, 255]
-            part.split('').forEach((char, index) => {
+            part.split('').forEach((char) => {
                 let symbolColor = color
                 if (/^[a-z0-9]+$/i.test(char)) {
                     symbolColor = modColor(color, -50)
