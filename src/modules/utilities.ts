@@ -44,7 +44,7 @@ function trim(c: Canvas) {
         }
     }
     if (bound.top === null || bound.left === null || bound.right === null || bound.bottom === null) return;
-    let trimHeight = bound.bottom - bound.top,
+    const trimHeight = bound.bottom - bound.top,
         trimWidth = bound.right - bound.left,
         trimmed = ctx.getImageData(bound.left, bound.top, trimWidth, trimHeight);
     copy.canvas.width = trimWidth;
@@ -168,12 +168,12 @@ export class MathGenerator {
     }
     static generateEquation(map?: Map<string, number>): [string, number] {
         if (map == undefined) map = new Map()
-        let startNum = random(1, defaulter(map.get('termIntCap'), 20));
+        const startNum = random(1, defaulter(map.get('termIntCap'), 20));
         let string = `${this.seperateNumber(startNum, map, defaulter(map.get('maxDepth'), 5))}`;
         const terms = random(1, defaulter(map.get('termLimit'), 5));
         let finalSolution = startNum;
         for (let i = 0; i < terms; i++) {
-            let term = random(1, 50);
+            const term = random(1, 50);
             if (Math.random() < 0.5) {
                 string += ` + ${this.seperateNumber(term, map, defaulter(map.get('maxDepth'), 5))}`
                 finalSolution += term;
@@ -201,7 +201,7 @@ function toRad(degrees: number): number {
     return (degrees * Math.PI) / 180
 }
 function factors(num: number): number[] {
-    let factors = [];
+    const factors = [];
     for (let i = 2; i <= num / 2 - 1; i++) {
         if (num % i === 0) {
             factors.push(i);
@@ -210,13 +210,13 @@ function factors(num: number): number[] {
     return factors;
 }
 export function numberedStringArraySingle(item: string, index: number) {
-    let strings = ["🥇 ", "🥈 ", "🥉 "];
+    const strings = ["🥇 ", "🥈 ", "🥉 "];
     if (strings[index]) return `${strings[index]}${item}`;
     else return `${index + 1}th. ${item}`;
 }
 export function numberedStringArray(array: string[]) {
-    let newArray: string[] = []
-    let strings = ["🥇 ", "🥈 ", "🥉 "];
+    const newArray: string[] = []
+    const strings = ["🥇 ", "🥈 ", "🥉 "];
     array.forEach((item, index) => {
         newArray.push(numberedStringArraySingle(item, index))
     })
@@ -243,7 +243,7 @@ function formatter(number: number) {
     return string;
 }
 export async function createImageCanvas(url: string, constraints?: [number, number], rounding: number = 0) {
-    let image = await loadImage(url)
+    const image = await loadImage(url)
     let x, y = 0
     if (!constraints) {
         x = image.width
@@ -260,9 +260,9 @@ export async function createImageCanvas(url: string, constraints?: [number, numb
             y = constraints[1]
         }
     }
-    let canvas = new Canvas(x, y)
-    let ctx = canvas.getContext('2d')
-    let ctxUtils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
+    const canvas = new Canvas(x, y)
+    const ctx = canvas.getContext('2d')
+    const ctxUtils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
     if (rounding > 0) {
         ctxUtils.roundedRect(0, 0, x, y, rounding, 0)
         ctx.clip()
@@ -271,8 +271,8 @@ export async function createImageCanvas(url: string, constraints?: [number, numb
     return canvas;
 }
 async function createBackgroundImage(url: string, resolution = 1) {
-    let canvas = new Canvas(1200 * resolution, 300 * resolution);
-    let ctx = canvas.getContext('2d');
+    const canvas = new Canvas(1200 * resolution, 300 * resolution);
+    const ctx = canvas.getContext('2d');
     ctx.fillRect(325 * resolution, 200 * resolution, 700 * resolution, 50 * resolution)
     ctx.beginPath();
     ctx.arc(150 * resolution, 150 * resolution, 150 * resolution, 0, Math.PI * 2);
@@ -285,16 +285,16 @@ async function createBackgroundImage(url: string, resolution = 1) {
     ctx.lineTo(150 * resolution, 300 * resolution);
     ctx.fill()
     ctx.globalCompositeOperation = 'source-in'
-    let image = await loadImage(url);
-    let height = Math.round((image.height / image.width) * (1200 * resolution))
+    const image = await loadImage(url);
+    const height = Math.round((image.height / image.width) * (1200 * resolution))
     ctx.drawImage(await loadImage(url), 0, -(height - (300 * resolution)) / 2, 1200 * resolution, height)
     return canvas;
 }
 async function createTemplate(url: string, resolution = 1) {
-    let canvas = new Canvas(1200 * resolution, 300 * resolution);
-    let ctx = canvas.getContext('2d');
-    let palette = await getPalette(url);
-    let gradient = ctx.createLinearGradient(0, 0, 1200 * resolution, 0);
+    const canvas = new Canvas(1200 * resolution, 300 * resolution);
+    const ctx = canvas.getContext('2d');
+    const palette = await getPalette(url);
+    const gradient = ctx.createLinearGradient(0, 0, 1200 * resolution, 0);
     gradient.addColorStop(0, palette[0].string);
     gradient.addColorStop(1, palette[1].string);
     ctx.strokeStyle = gradient;
@@ -324,24 +324,24 @@ export async function createNameCard(url: string, accentColor?: string, resoluti
     } catch (error) {
         url = GetFile.assets + '/images/namecards/backgrounds/default.png'
     }
-    let canvas = new Canvas(1200, 300);
-    let ctx = canvas.getContext('2d');
+    const canvas = new Canvas(1200, 300);
+    const ctx = canvas.getContext('2d');
     ctx.drawImage(await createBackgroundImage(url, resolution), 0, 0, 1200, 300)
     ctx.drawImage(await createTemplate(url, resolution), 0, 0, 1200, 300)
     return canvas;
 }
 async function getBackground(h:number,color:[number,number,number]) {
-    let canvas = new Canvas(1000,h)
-    let ctx = canvas.getContext('2d')
-    let utils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
-    let radial = ctx.createRadialGradient(50, 50, 0, 50, 50, 50);
+    const canvas = new Canvas(1000,h)
+    const ctx = canvas.getContext('2d')
+    const utils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D)
+    const radial = ctx.createRadialGradient(50, 50, 0, 50, 50, 50);
     radial.addColorStop(0, `rgb(${color.map((c) => Math.round(c * 0.75)).join(',')})`);
     radial.addColorStop(1, `rgb(${color.map((c) => Math.round(c * 0.5)).join(',')})`);
-    let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     gradient.addColorStop(0, `rgb(${color.join(',')})`);
     gradient.addColorStop(1, `rgb(${color.map((c) => Math.round(c * 0.75)).join(',')})`);
     ctx.strokeStyle = gradient;
-    let darkgradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    const darkgradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     darkgradient.addColorStop(0, `rgb(${color.map((c) => Math.round(c * 0.75)).join(',')})`);
     darkgradient.addColorStop(1, `rgb(${color.map((c) => Math.round(c * 0.5)).join(',')})`);
     ctx.fillStyle = darkgradient;
@@ -363,17 +363,17 @@ async function getBackground(h:number,color:[number,number,number]) {
 }
 export async function createGameCard(title: string, description: string | (string | Canvas)[] | Canvas, options:{color?: [number, number, number], icon?: Canvas, paranthesesColor?: boolean}) {
     if (!options.color) options.color = [180, 180, 180]
-    let descFormat = new markdownText(description, '20px Segmento')
-    let titleFormat = new markdownText('&f'+title, '40px Segmento')
+    const descFormat = new markdownText(description, '20px Segmento')
+    const titleFormat = new markdownText('&f'+title, '40px Segmento')
     // Formatting
     descFormat.splitLines(960)
     if (options.paranthesesColor) descFormat.paranthesesColor()
     titleFormat.autoScale(0, 860, 80)
     // Canvases
-    let descCanvas = descFormat.parseLines(10, 960)
-    let titleCanvas = titleFormat.parseLines(10, 960)
-    let canvas = new Canvas(1000, 130 + descCanvas.height)
-    let ctx = canvas.getContext('2d');
+    const descCanvas = descFormat.parseLines(10, 960)
+    const titleCanvas = titleFormat.parseLines(10, 960)
+    const canvas = new Canvas(1000, 130 + descCanvas.height)
+    const ctx = canvas.getContext('2d');
     const utils = new ContextUtilities(ctx as unknown as CanvasRenderingContext2D);
     // Frame
     utils.roundedRect(0, 0, 1000, canvas.height, 50, 0)
@@ -395,13 +395,13 @@ export async function createGameCard(title: string, description: string | (strin
 }
 export async function getPalette(url: string|Canvas) {
     const quality = 10;
-    let image = url instanceof Canvas?url:(await loadImage(url))
-    let canvas = new Canvas(image.width, image.height);
-    let ctx = canvas.getContext('2d');
-    let pixelCount = image.width * image.height;
+    const image = url instanceof Canvas?url:(await loadImage(url))
+    const canvas = new Canvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    const pixelCount = image.width * image.height;
     ctx.drawImage(image, 0, 0, image.width, image.height)
-    let imageData = ctx.getImageData(0, 0, image.width, image.height).data;
-    let pixels = [];
+    const imageData = ctx.getImageData(0, 0, image.width, image.height).data;
+    const pixels = [];
     for (let i = 0, offset, r, g, b, a; i < pixelCount; i = i + quality) {
         offset = i * 4;
         r = imageData[offset + 0];
@@ -417,7 +417,7 @@ export async function getPalette(url: string|Canvas) {
     }
     const cmap = quantize(pixels as RgbPixel[], 2);
     const palette = cmap ? cmap.palette() : null;
-    let colors:{string:string,color:[number,number,number]}[] = [];
+    const colors:{string:string,color:[number,number,number]}[] = [];
     if (palette) {
         for (let i = 0; i < palette.length; i++) {
             colors.push({string:`rgb( ${palette[i][0]} ${palette[i][1]} ${palette[i][2]} )`,color:[palette[i][0],palette[i][1],palette[i][2]]});
@@ -469,7 +469,7 @@ export class markdownText {
         })
     }
     autoScale(index: number, maxW: number, maxH: number, initSize = 10) {
-        let line = this.markdownLines[index]
+        const line = this.markdownLines[index]
         if ((!line) || line.text instanceof Canvas) return;
         const text = line.text.replace(markdownText.globalColorRegex, '')
         while (this.measureTextWidth(text, `${initSize}px ${this.fontname}`) < maxW && this.measureFontHeight(`${initSize}px ${this.fontname}`) < maxH) {
@@ -479,13 +479,13 @@ export class markdownText {
         return this;
     }
     paranthesesColor() {
-        let left: number[] = [];
-        let right: number[] = [];
-        let pairs: number[][] = [];
-        let stringLines: { text: string, index: number }[] = [];
+        const left: number[] = [];
+        const right: number[] = [];
+        const pairs: number[][] = [];
+        const stringLines: { text: string, index: number }[] = [];
         this.markdownLines.forEach((line, i) => {
             if (line.text instanceof Canvas) return;
-            let stringLine = { text: line.text, index: i }
+            const stringLine = { text: line.text, index: i }
             stringLines.push(stringLine)
         })
         stringLines.forEach((line) => {
@@ -495,20 +495,20 @@ export class markdownText {
                     left.push(i);
                 } else if (char === ')') {
                     right.push(i);
-                    let leftIndex = left.pop();
+                    const leftIndex = left.pop();
                     pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
                 }
             }
         })
         stringLines.forEach((line) => {
-            let modifiedStr = line.text.split('').map((char, index) => {
+            const modifiedStr = line.text.split('').map((char, index) => {
                 if (char === '(') {
-                    let pair = pairs.find(pair => pair[0] === index)
+                    const pair = pairs.find(pair => pair[0] === index)
                     if (pair) {
                         return `${(pair[2] + 1 == 0) ? '&f' : markdownText.parantheseMap[(pair[2] + 1) % 3]}(`;
                     }
                 } else if (char === ')') {
-                    let pair = pairs.find(pair => pair[1] === index)
+                    const pair = pairs.find(pair => pair[1] === index)
                     if (pair) {
                         return `)${(pair[2] <= 0) ? '&f' : markdownText.parantheseMap[pair[2] % 3]}`;
                     }
@@ -520,8 +520,8 @@ export class markdownText {
         return this;
     }
     measureFontHeight(font = this.font) {
-        let canvas = new Canvas(100, 100)
-        let ctx = canvas.getContext('2d');
+        const canvas = new Canvas(100, 100)
+        const ctx = canvas.getContext('2d');
         ctx.font = font
         ctx.textBaseline = 'top'
         ctx.fillText('ACEGIKMOQSUWYZ', 0, 0)
@@ -532,18 +532,18 @@ export class markdownText {
         return result ? result.height : 100
     }
     measureTextWidth(text: string, font: string = this.font) {
-        let canvas = new Canvas(100, 100)
-        let ctx = canvas.getContext('2d');
+        const canvas = new Canvas(100, 100)
+        const ctx = canvas.getContext('2d');
         ctx.font = font
         return ctx.measureText(text).width
     }
     splitLines(maxWidth: number, wordBreak = true) {
         let newLines: { size: number, text: string | Canvas, height: number, align: AlignSetting }[] = [];
         this.markdownLines.forEach((line, index) => {
-            if (line.text instanceof Canvas) { newLines.push(line); return };
-            let lines = [];
-            let lineSplit = line.text.split(markdownText.globalColorRegex)
-            let words: string[] = []
+            if (line.text instanceof Canvas) { newLines.push(line); return }
+            const lines = [];
+            const lineSplit = line.text.split(markdownText.globalColorRegex)
+            const words: string[] = []
             for (let i = 0; i < lineSplit.length; i++) {
                 const line = lineSplit[i];
                 (wordBreak ? line.split(' ') : line.split(''))
@@ -552,7 +552,7 @@ export class markdownText {
                     })
             }
             let currentString = ''
-            let spacer = wordBreak ? ' ' : ''
+            const spacer = wordBreak ? ' ' : ''
             words.forEach((word) => {
                 if (word.match(markdownText.colorRegex) || word.length < 1) {
                     currentString += word;
@@ -574,11 +574,11 @@ export class markdownText {
     }
     parseLineColor(text: string, font: string, initColor: string | CanvasGradient | CanvasPattern): [Canvas, CanvasRenderingContext2D] {
         const [textWidth, textHeight] = [this.measureTextWidth(text, font), this.measureFontHeight(font)];
-        let canvas = new Canvas(textWidth, textHeight)
-        let ctx = canvas.getContext('2d');
+        const canvas = new Canvas(textWidth, textHeight)
+        const ctx = canvas.getContext('2d');
         ctx.textBaseline = 'hanging'
         ctx.font = font
-        let textSplit = text.split(markdownText.globalColorRegex)
+        const textSplit = text.split(markdownText.globalColorRegex)
         let color;
         let position = 0;
         ctx.fillStyle = initColor;
@@ -588,7 +588,7 @@ export class markdownText {
                 if (!color) color = [255, 255, 255]
                 ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
                 continue
-            };
+            }
             ctx.fillText(textSplit[string], position, 0)
             position += ctx.measureText(textSplit[string]).width
         }
@@ -606,19 +606,19 @@ export class markdownText {
                 height += line.text.height + padding
                 if (line.text.width > maxWidth) maxWidth = line.text.width;
                 return;
-            };
+            }
             const textW = this.measureTextWidth(line.text, `${line.size}px ${this.fontname}`)
             const textH = this.measureFontHeight(`${line.size}px ${this.fontname}`)
             height += textH
             if (textW > maxWidth) return maxWidth = textW;
         })
         width = width > 0 ? width : maxWidth;
-        let canvas = new Canvas(width, height + padding * (this.markdownLines.length - 1))
-        let ctx = canvas.getContext('2d');
+        const canvas = new Canvas(width, height + padding * (this.markdownLines.length - 1))
+        const ctx = canvas.getContext('2d');
         height = 0
         this.markdownLines.forEach((line, index) => {
             if (!(line.text instanceof Canvas)) {
-                let text = this.parseLineColor(line.text, `${line.size}px ${this.fontname}`, ctx.fillStyle)
+                const text = this.parseLineColor(line.text, `${line.size}px ${this.fontname}`, ctx.fillStyle)
                 line.text = text[0]
                 ctx.fillStyle = text[1].fillStyle
             }
@@ -648,7 +648,7 @@ export class DialogueRowBuilder extends ActionRowBuilder<StringSelectMenuBuilder
         super();
         this.parent = parent
         this.menu = this.addComponents(new DialogueSelectMenu(parent)).components[0] as DialogueSelectMenu
-    };
+    }
     addOption(name: string, id: string, callBack: () => void) {
         this.menu.addOption(name, id, callBack)
         return this
@@ -681,7 +681,7 @@ export class Dialogue {
     }
     addSelectMenu() {
         this.select = new DialogueRowBuilder(this)
-        let menu = this.select.menu.setCustomId('dialogue')
+        const menu = this.select.menu.setCustomId('dialogue')
         menu.setPlaceholder('Select an option')
             .setCustomId('dialogue')
         return this
@@ -699,7 +699,7 @@ export class Dialogue {
         return this;
     }
     parse() {
-        let embed = new EmbedBuilder()
+        const embed = new EmbedBuilder()
             .setTitle(this.title)
             .setDescription(this.description)
         this.fields.forEach(field => {
@@ -708,7 +708,7 @@ export class Dialogue {
         return { embeds: [embed], components: this.select ? [this.select] : [] }
     }
     startCollection(message: Message, time = 60000, filter: (interaction: StringSelectMenuInteraction<"cached">) => boolean = () => { return true }) {
-        let collector = message.channel.createMessageComponentCollector({ componentType: ComponentType.StringSelect, time: time, filter: (interaction: StringSelectMenuInteraction<"cached">) => { return interaction.customId == 'dialogue' && interaction.message.id == message.id && filter(interaction) } })
+        const collector = message.channel.createMessageComponentCollector({ componentType: ComponentType.StringSelect, time: time, filter: (interaction: StringSelectMenuInteraction<"cached">) => { return interaction.customId == 'dialogue' && interaction.message.id == message.id && filter(interaction) } })
         collector.on('collect', (interaction) => {
             this.options.forEach(option => {
                 if (option.id == interaction.values[0]) {
@@ -728,8 +728,8 @@ export class DialogueOption extends Dialogue {
     }
 }
 export function measureText(text: string, font: string) {
-    let canvas = new Canvas(1, 1);
-    let ctx = canvas.getContext('2d');
+    const canvas = new Canvas(1, 1);
+    const ctx = canvas.getContext('2d');
     ctx.font = font;
     return ctx.measureText(text);
 
@@ -740,7 +740,7 @@ export class ContextUtilities {
         this.context = context
     }
     setGradient(x1: number, y1: number, x2: number, y2: number, colors: string[]) {
-        let gradient = this.context.createLinearGradient(x1, y1, x2, y2)
+        const gradient = this.context.createLinearGradient(x1, y1, x2, y2)
         colors.forEach((color, index) => {
             gradient.addColorStop(index / (colors.length - 1), color)
         })
@@ -777,7 +777,7 @@ export class ContextUtilities {
         return this;
     }
     angledRect(x: number, y: number, x2: number, y2: number, width: number) {
-        let angle = Math.atan((y2 - y) / (x2 - x))
+        const angle = Math.atan((y2 - y) / (x2 - x))
         this.context.beginPath()
         this.context.moveTo(x, y)
         this.context.lineTo(x2, y2)
@@ -796,7 +796,7 @@ export class ContextUtilities {
         return this;
     }
     polygon(sides: number, x: number, y: number, radius: number) {
-        let angle = Math.PI * 2 / sides
+        const angle = Math.PI * 2 / sides
         this.context.beginPath()
         this.context.moveTo(x + radius * Math.cos(0), y + radius * Math.sin(0))
         for (let i = 1; i < sides; i++) {
@@ -806,7 +806,7 @@ export class ContextUtilities {
         return this
     }
     starPolygon(sides: number, x: number, y: number, radius: number, innerRadius: number, angleOffset = -90) {
-        let angle = Math.PI * 2 / sides
+        const angle = Math.PI * 2 / sides
         this.context.beginPath()
         this.context.moveTo(x + radius * Math.cos(toRad(angleOffset)), y + radius * Math.sin(toRad(angleOffset)))
         for (let i = 1; i < sides; i++) {
@@ -824,13 +824,13 @@ export class ContextUtilities {
 // Trading Card Game Utilities
 //
 export function cardDraw(guarantee: boolean, pity = 0) {
-    let cards = GetFile.tradecardManifest().cards
-    let rankedCards: card[][] = [[], [], []]
+    const cards = GetFile.tradecardManifest().cards
+    const rankedCards: card[][] = [[], [], []]
     cards.forEach(card => {
         if (typeof card.rank == 'number') rankedCards[card.rank - 1].push(card)
     })
-    let cardBool = guarantee ? true : Math.random() < 0.1
-    let threshold = randomInt(0, 1000)
+    const cardBool = guarantee ? true : Math.random() < 0.1
+    const threshold = randomInt(0, 1000)
     let card;
     if (cardBool) {
         if (threshold < (6 + pity * 3)) {
@@ -844,8 +844,8 @@ export function cardDraw(guarantee: boolean, pity = 0) {
     return card
 }
 export async function addFrame(source: string | Canvas, rank: number | string, scale = 1) {
-    let canvas = new Canvas(1000 * scale, 1400 * scale)
-    let ctx = canvas.getContext('2d');
+    const canvas = new Canvas(1000 * scale, 1400 * scale)
+    const ctx = canvas.getContext('2d');
     let sourceImage
     if (source instanceof Canvas) sourceImage = source
     else {
@@ -866,11 +866,11 @@ export async function addFrame(source: string | Canvas, rank: number | string, s
     return canvas;
 }
 export async function createCatalog(cards: number[], background?: string) {
-    let data: TradecardManifest = require(GetFile.assets + '/images/tradecards/manifest.json')
-    let allCards = data.cards
-    let catalogCards = []
-    let cardvas = new Canvas(1250 + 80, Math.ceil(cards.length / 5) * (370))
-    let cardctx = cardvas.getContext('2d')
+    const data: TradecardManifest = require(GetFile.assets + '/images/tradecards/manifest.json')
+    const allCards = data.cards
+    const catalogCards = []
+    const cardvas = new Canvas(1250 + 80, Math.ceil(cards.length / 5) * (370))
+    const cardctx = cardvas.getContext('2d')
     for (let i = 0; i < cards.length; i++) {
         const card = allCards.find(c => c.id == cards[i])
         if (card) catalogCards.push(card)
@@ -879,14 +879,14 @@ export async function createCatalog(cards: number[], background?: string) {
     for (let i = 0; i < catalogCards.length; i++) {
         const card = catalogCards[i]
         if (card) {
-            let image = await addFrame(GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25)
+            const image = await addFrame(GetFile.assets + `/images/tradecards/backgrounds/${card.background}`, card.rank, 0.25)
             cardctx.drawImage(image, (i % 5) * (270), Math.floor(i / 5) * (370), 250, 350)
         }
     }
-    let catalogcanvas = new Canvas(1530, 2180)
-    let catalogctx = catalogcanvas.getContext('2d')
+    const catalogcanvas = new Canvas(1530, 2180)
+    const catalogctx = catalogcanvas.getContext('2d')
     if (background) {
-        let catalogBackground = await loadImage(GetFile.assets + `/images/tradecards/catalogs/${background}`)
+        const catalogBackground = await loadImage(GetFile.assets + `/images/tradecards/catalogs/${background}`)
         catalogctx.drawImage(catalogBackground, 0, 0, 1530, 2180)
         catalogctx.drawImage(cardvas, 40, 560, 1450, (1450 / cardvas.width) * cardvas.height)
         cardctx.drawImage(catalogBackground, 0, 0)
@@ -895,15 +895,15 @@ export async function createCatalog(cards: number[], background?: string) {
     return cardvas
 }
 export async function openChestGif(background: string, rank: number | string) {
-    let encoder = new GIFEncoder(250, 350)
+    const encoder = new GIFEncoder(250, 350)
     encoder.setDelay(50)
     encoder.setRepeat(-1)
     encoder.start()
-    let frames = fs.readdirSync(GetFile.assets + '/images/tradecards/chestgif')
+    const frames = fs.readdirSync(GetFile.assets + '/images/tradecards/chestgif')
     for (let i = 0; i < 25; i++) {
-        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/1.gif')
-        let canvas = new Canvas(250, 350)
-        let ctx = canvas.getContext('2d')
+        const image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/1.gif')
+        const canvas = new Canvas(250, 350)
+        const ctx = canvas.getContext('2d')
         ctx.fillStyle = '#313338'
         ctx.fillRect(0, 0, 250, 350)
         ctx.drawImage(image, Math.round(randomInt(i + 1) - (i + 1) / 2), Math.round(randomInt(i + 1) - (i + 1) / 2), 250, 350)
@@ -911,10 +911,10 @@ export async function openChestGif(background: string, rank: number | string) {
         encoder.addFrame(ctx)
     }
     for (let i = 0; i < frames.length; i++) {
-        let image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/' + frames[i])
-        let image2 = await addFrame(GetFile.assets + '/images/tradecards/backgrounds/' + background, rank)
-        let canvas = new Canvas(250, 350)
-        let ctx = canvas.getContext('2d')
+        const image = await loadImage(GetFile.assets + '/images/tradecards/chestgif/' + frames[i])
+        const image2 = await addFrame(GetFile.assets + '/images/tradecards/backgrounds/' + background, rank)
+        const canvas = new Canvas(250, 350)
+        const ctx = canvas.getContext('2d')
         ctx.fillStyle = '#313338'
         ctx.fillRect(0, 0, 250, 350)
         ctx.drawImage(image, 0, 30 * i, 250, 350)
@@ -933,8 +933,8 @@ export async function openChestGif(background: string, rank: number | string) {
     return encoder.out.getData()
 }
 export async function getLeaderCard(users: (GuildMember | User)[], resolution = 1, data: DataManager) {
-    let canvas = new Canvas(2450 * resolution, 1925 * resolution)
-    let context = canvas.getContext('2d')
+    const canvas = new Canvas(2450 * resolution, 1925 * resolution)
+    const context = canvas.getContext('2d')
     for (let i = 0; i < users.length; i++) {
         context.drawImage(await getNamecard(users[i], data, i + 1, resolution), Math.floor(i / 6) * 1250 * resolution, (i % 6) * 325 * resolution, 1200 * resolution, 300 * resolution)
     }
@@ -963,26 +963,26 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
         user = new GuildMemberManager(data.getGuildManager(gUser.guild.id).getMember(gUser.id));
         gUser2 = (user as GuildMemberManager).getGlobalUser();
     }
-    let userLevel = user.getLevel();
+    const userLevel = user.getLevel();
     const avatarURL = gUser.displayAvatarURL({ extension: 'png' });
     const lastRequirement = (userLevel > 1) ? DataManager.getLevelRequirement(userLevel - 1) : 0;
     const requirement = DataManager.getLevelRequirement(userLevel);
-    let hexColor = (gUser instanceof GuildMember && gUser.displayHexColor != '#000000') ? gUser.displayHexColor : '#00EDFF';
-    let canvas = new Canvas(1200 * resolution, 300 * resolution);
-    let context = canvas.getContext('2d');
+    const hexColor = (gUser instanceof GuildMember && gUser.displayHexColor != '#000000') ? gUser.displayHexColor : '#00EDFF';
+    const canvas = new Canvas(1200 * resolution, 300 * resolution);
+    const context = canvas.getContext('2d');
     context.fillStyle = hexColor;
     context.drawImage(await loadImage((await createNameCard('')).toBuffer()), 0, 0, 1200 * resolution, 300 * resolution);
     context.globalCompositeOperation = 'destination-over';
     // Avatar PFP
-    let avatarCanvas = new Canvas(260 * resolution, 260 * resolution);
-    let avatarContext = avatarCanvas.getContext('2d');
+    const avatarCanvas = new Canvas(260 * resolution, 260 * resolution);
+    const avatarContext = avatarCanvas.getContext('2d');
     avatarContext.arc(130 * resolution, 130 * resolution, 130 * resolution, 0, Math.PI * 2, true);
     avatarContext.fill();
     avatarContext.globalCompositeOperation = 'source-in';
     avatarContext.drawImage(await loadImage(avatarURL ? avatarURL + "?size=1024" : './build/assets/images/namecards/namecard.png'), 0, 0, 260 * resolution, 260 * resolution);
     context.drawImage(await loadImage(avatarCanvas.toBuffer()), 20 * resolution, 20 * resolution, 260 * resolution, 260 * resolution);
     // Background
-    let percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700 * resolution);
+    const percent = Math.round(((user.user.xp - lastRequirement) / (requirement - lastRequirement)) * 700 * resolution);
     context.fillRect(325 * resolution, 200 * resolution, percent, 50 * resolution);
     context.globalCompositeOperation = 'source-over';
     context.font = `${40 * resolution}px Segmento`;
@@ -993,7 +993,7 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     context.font = `${30 * resolution}px Segmento`;
     let wid = context.measureText(`Level`).width;
     context.font = `${40 * resolution}px Segmento`;
-    let wid2 = context.measureText(user.getLevel().toString()).width;
+    const wid2 = context.measureText(user.getLevel().toString()).width;
     context.fillText(user.getLevel().toString(), (1100 - (wid2)) * resolution, 75 * resolution);
     context.font = `${30 * resolution}px Segmento`;
     context.fillText(`Level`, (1100 - (wid2 + wid)) * resolution, 75 * resolution);
@@ -1003,7 +1003,7 @@ export async function getNamecard(gUser: GuildMember | User, data: DataManager, 
     return canvas;
 }
 function modColor(color: [number, number, number], modifier: number) {
-    let newColor = color.map((value, index) => {
+    const newColor = color.map((value, index) => {
         let newValue = value + modifier
         if (newValue > 255) newValue = 255
         if (newValue < 0) newValue = 0
@@ -1053,26 +1053,26 @@ export function colorEncoder(str: string) {
     return canvas;
 }
 export function createColorText(str: string) {
-    let left: number[] = [];
-    let right: number[] = [];
-    let pairs: number[][] = [];
+    const left: number[] = [];
+    const right: number[] = [];
+    const pairs: number[][] = [];
     for (let i = 0; i < str.length; i++) {
         if (str[i] === '(') {
             left.push(i);
         } else if (str[i] === ')') {
             right.push(i);
-            let leftIndex = left.pop();
+            const leftIndex = left.pop();
             pairs.push([typeof leftIndex == 'number' ? leftIndex : -1, i, left.length]);
         }
     }
-    let modifiedStr = str.split('').map((char, index) => {
+    const modifiedStr = str.split('').map((char, index) => {
         if (char === '(') {
-            let pair = pairs.find(pair => pair[0] === index)
+            const pair = pairs.find(pair => pair[0] === index)
             if (pair) {
                 return `\&${pair[2]}(`
             }
         } else if (char === ')') {
-            let pair = pairs.find(pair => pair[1] === index)
+            const pair = pairs.find(pair => pair[1] === index)
             if (pair) {
                 return `)\&${pair[2] - 1 >= 0 ? pair[2] - 1 : 'f'}`
             }
