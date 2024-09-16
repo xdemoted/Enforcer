@@ -908,6 +908,7 @@ export async function openChestGif(background: string, rank: number | string) {
         ctx.fillRect(0, 0, 250, 350)
         ctx.drawImage(image, Math.round(randomInt(i + 1) - (i + 1) / 2), Math.round(randomInt(i + 1) - (i + 1) / 2), 250, 350)
         //@ts-expect-error
+        // TS doesn't recognize the correct type for CTX causing an error
         encoder.addFrame(ctx)
     }
     for (let i = 0; i < frames.length; i++) {
@@ -926,6 +927,7 @@ export async function openChestGif(background: string, rank: number | string) {
         ctx.clip()
         if (i != 0) ctx.drawImage(image2, 55 - (55 / 7) * (i + 1), 197 - (197 / 7) * (i + 1), 144 + ((250 - 144) / 7) * (i + 1), 202 + ((350 - 202) / 7) * (i + 1))
         //@ts-expect-error
+        // TS doesn't recognize the correct type for CTX causing an error
         encoder.addFrame(ctx)
         //if (i == 0) encoder.setDelay(50)
     }
