@@ -15,6 +15,7 @@
     "axios": "^1.5.1",
     "canvas": "^2.11.2",
     "discord.js": "^14.13.0",
+    "enforcer": "file:",
     "gifencoder": "^2.0.1",
     "quantize": "^1.0.2",
     "typescript": "^5.4.2"

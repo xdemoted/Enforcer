@@ -1,14 +1,11 @@
 import { Canvas, loadImage } from "canvas";
-import path from 'path'
-import { ActionRowBuilder, ColorResolvable, ComponentType, EmbedBuilder, GuildMember, Message, StringSelectMenuBuilder, StringSelectMenuInteraction, TextChannel, User } from "discord.js";
+import { ActionRowBuilder, ComponentType, EmbedBuilder, GuildMember, Message, StringSelectMenuBuilder, StringSelectMenuInteraction, User } from "discord.js";
 import { RgbPixel } from "quantize";
-import EventEmitter from 'events';
 import fs from 'fs'
 import { randomInt } from "crypto"
 import { BaseUserManager, DataManager, GetFile, GlobalUser, GuildMemberManager, TradecardManifest, UserManager, card } from "./data";
 import GIFEncoder from "gifencoder";
-import { isLineBreak } from "typescript";
-var quantize = require('quantize');
+const quantize = require('quantize');
 
 // Stored Objects
 
@@ -16,7 +13,7 @@ const startChance = 0.01
 const valueMap = { "+": 10, "-": 20, "*": 30, "/": 40 }
 function trim(c: Canvas) {
 
-    var ctx = c.getContext('2d'),
+    let ctx = c.getContext('2d'),
         copy = new Canvas(0, 0).getContext('2d'),
         pixels = ctx.getImageData(0, 0, c.width, c.height),
         l = pixels.data.length,
@@ -47,7 +44,7 @@ function trim(c: Canvas) {
         }
     }
     if (bound.top === null || bound.left === null || bound.right === null || bound.bottom === null) return;
-    var trimHeight = bound.bottom - bound.top,
+    let trimHeight = bound.bottom - bound.top,
         trimWidth = bound.right - bound.left,
         trimmed = ctx.getImageData(bound.left, bound.top, trimWidth, trimHeight);
     copy.canvas.width = trimWidth;
@@ -55,7 +52,7 @@ function trim(c: Canvas) {
     copy.putImageData(trimmed, 0, 0);
     return copy.canvas;
 }
-export let maps = {
+export const maps = {
     easy: new Map().set('recompose', 0.5).set('factorize', 0.05).set('divide', 0.05).set('exponentiate', 0.1).set('root', 0.1).set('maxDivision', 3).set('termIntCap', 10).set('maxDepth', 1).set('termLimit', 1),
     medium: new Map().set('recompose', 0.15).set('factorize', 0.1).set('divide', 0.2).set('exponentiate', 0.2).set('root', 0.2).set('maxDivision', 7).set('termIntCap', 25).set('maxDepth', 3).set('termLimit', 1),
     hard: new Map().set('recompose', 0.1).set('factorize', 0.2).set('divide', 0.2).set('exponentiate', 0.3).set('root', 0.3).set('maxDivision', 15).set('termIntCap', 50).set('maxDepth', 4).set('termLimit', 1)
@@ -71,7 +68,7 @@ export function isSqrt(value: number) {
     return ((value ** 0.5) == Math.floor(value ** 0.5) ? true : false)
 }
 export function multiples(num: number) {
-    let multiples: any[] = []
+    const multiples: number[] = []
     for (let i = 0; i < num; i++) {
         const result = num / i
         if ((result - Math.floor(result) == 0)) {
@@ -100,12 +97,12 @@ export class MathGenerator {
     static algGen() {
         const A = random(-100, 100);
         const terms = random(3, 10);
-        let randoms = [];
+        const randoms = [];
         let string = ""
         let final = 0;
         for (let i = 0; i < terms; i++) {
             randoms.push(random(-20, 20));
-            let mode = random(1, 2);
+            const mode = random(1, 2);
             switch (mode) {
                 case 1:
                     final += randoms[i] * A;
@@ -117,9 +114,9 @@ export class MathGenerator {
                     break;
 
                 case 2:
-                    let randomMultiple = randoms[i]
-                    let randomX = random(-3, 3)
-                    let randomConst = random(-10, 10)
+                    const randomMultiple = randoms[i]
+                    const randomX = random(-3, 3)
+                    const randomConst = random(-10, 10)
                     if (i == 0) {
                         string += `${randomMultiple}(${formatter(randomX) + "x"}${sign(randomConst)})`;
                     } else {
@@ -1085,7 +1082,7 @@ export function createColorText(str: string) {
     return colorEncoder(modifiedStr);
 }
 export function hexToRgb(hex: string) {
-    var res = hex.match(/[a-f0-9]{2}/gi);
+    const res = hex.match(/[a-f0-9]{2}/gi);
     return res && res.length === 3
         ? res.map(function (v) { return parseInt(v, 16) })
         : null;
